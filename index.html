@@ -212,6 +212,7 @@ html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:t
 .tree .edge.miss line.band-outer{stroke:var(--litdim);stroke-width:38;
   filter:drop-shadow(0 0 5px var(--litdim)) drop-shadow(0 0 13px var(--litdim))}
 .qmain.heb{font-family:var(--heb);font-size:clamp(56px,15vw,92px);line-height:1}
+.qmain.hebw{font-family:var(--heb);font-size:clamp(34px,9vw,60px);line-height:1.1}
 .opt .og.heb{font-family:var(--heb)}
 #qribbon .faces{height:30px;margin-top:4px}
 #qribbon .fseg{font-size:19px}
@@ -594,6 +595,46 @@ function buildTree(host,onPick){
   return byI;
 }
 
+/* --- gematria -----------------------------------------------------------
+   Values are counted off the spelling rather than written down beside it,
+   so the Hebrew on screen and the answer can never drift apart. Finals
+   count as their plain forms, which is the ordinary reckoning. */
+const HEBVAL=(()=>{const m={};HEB.forEach(h=>m[h.ch]=h.g);
+  m['\u05da']=20;m['\u05dd']=40;m['\u05df']=50;m['\u05e3']=80;m['\u05e5']=90;
+  return m})();
+const gval=w=>[...w].reduce((n,c)=>n+(HEBVAL[c]||0),0);
+const GEMSETS=[
+  {k:'glet',one:'Letter',word:false,
+   items:HEB.map(h=>({h:h.ch,n:h.n}))},
+  {k:'gsep',one:'Sephirah',word:true,
+   items:SEPH.map(n=>({h:SEPHHE[n],n:n}))},
+  {k:'garc',one:'Archangel',word:true,items:[
+    {h:'\u05de\u05d8\u05d8\u05e8\u05d5\u05df',n:'Metatron'},
+    {h:'\u05e8\u05d6\u05d9\u05d0\u05dc',n:'Raziel'},
+    {h:'\u05e6\u05e4\u05e7\u05d9\u05d0\u05dc',n:'Tzaphkiel'},
+    {h:'\u05e6\u05d3\u05e7\u05d9\u05d0\u05dc',n:'Tzadkiel'},
+    {h:'\u05db\u05de\u05d0\u05dc',n:'Khamael'},
+    {h:'\u05e8\u05e4\u05d0\u05dc',n:'Raphael'},
+    {h:'\u05d4\u05d0\u05e0\u05d9\u05d0\u05dc',n:'Haniel'},
+    {h:'\u05de\u05d9\u05db\u05d0\u05dc',n:'Michael'},
+    {h:'\u05d2\u05d1\u05e8\u05d9\u05d0\u05dc',n:'Gabriel'},
+    {h:'\u05e1\u05e0\u05d3\u05dc\u05e4\u05d5\u05df',n:'Sandalphon'}]},
+  {k:'gnam',one:'Name',word:true,items:[
+    {h:'\u05d0\u05d4\u05d9\u05d4',n:'Eheieh'},
+    {h:'\u05d9\u05d4',n:'Yah'},
+    {h:'\u05d9\u05d4\u05d5\u05d4',n:'YHVH'},
+    {h:'\u05d0\u05dc',n:'El'},
+    {h:'\u05d0\u05dc\u05d4\u05d9\u05dd',n:'Elohim'},
+    {h:'\u05d0\u05d3\u05e0\u05d9',n:'Adonai'},
+    {h:'\u05e9\u05d3\u05d9',n:'Shaddai'}]},
+  {k:'gwld',one:'World',word:true,items:[
+    {h:'\u05d0\u05e6\u05d9\u05dc\u05d5\u05ea',n:'Atziluth'},
+    {h:'\u05d1\u05e8\u05d9\u05d0\u05d4',n:'Briah'},
+    {h:'\u05d9\u05e6\u05d9\u05e8\u05d4',n:'Yetzirah'},
+    {h:'\u05e2\u05e9\u05d9\u05d4',n:'Assiah'}]}
+];
+const GEMBY={};GEMSETS.forEach(g=>GEMBY[g.k]=g);
+
 /* --- the 36 decanates -------------------------------------------------
    Ruler: Chaldean order from Mars at 0° Aries (identical to the faces).
    Card:  suit from the sign's element, number from its mode —
@@ -635,7 +676,10 @@ const APPS=[
    lede:'Thirty-six decans, each with its small card and its planetary ruler.'},
   {id:'tree',title:'Paths of the <em>Tree</em>',plain:'Paths of the Tree',
    sub:'Golden Dawn attributions',
-   lede:'The twenty-two paths, by letter, trump, sign, meaning and value.'}
+   lede:'The twenty-two paths, by letter, trump, sign and meaning.'},
+  {id:'gem',title:'<em>Gematria</em>',plain:'Gematria',
+   sub:'Hebrew numeration',
+   lede:'Letters, sephiroth, archangels and divine names against their values.'}
 ];
 const CATS=[
   {k:'dom', label:'Domiciles',          app:'dig'},
@@ -653,11 +697,18 @@ const CATS=[
   {k:'pas', label:'Sign & planet',      app:'tree'},
   {k:'pta', label:'Trump',              app:'tree'},
   {k:'pme', label:'Letter meaning',     app:'tree'},
-  {k:'pge', label:'Value',              app:'tree'}
+  {k:'glet',label:'Letters',            app:'gem'},
+  {k:'gsep',label:'Sephiroth',          app:'gem'},
+  {k:'garc',label:'Archangels',         app:'gem'},
+  {k:'gnam',label:'Divine names',       app:'gem'},
+  {k:'gwld',label:'The four worlds',    app:'gem'}
 ];
 const CATNAME={};CATS.forEach(c=>CATNAME[c.k]=c.label);
 const catsOf=id=>CATS.filter(c=>c.app===id).map(c=>c.k);
 const LENS=[12,24,48,'All'];
+/* the direction toggle reads differently depending on what is being drilled */
+const REVLAB={tree:['Symbol \u2192 path','Path \u2192 symbol'],
+              gem:['Word \u2192 value','Value \u2192 word']};
 
 const sc=p=>'p-'+PL[p].sect;
 const ec=s=>'e-'+s.el;
@@ -674,7 +725,7 @@ function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let BEST=load(KB,{}), LEDGER=load(KL,{});
 const BASE={len:'All',weak:0,trip:'dor',topt:22,nums:'all',rev:0};
 const DEFAULTS={dig:{cats:['dom','det','exf']},tar:{cats:['tn2k','tk2n']},dec:{cats:['dcps']},
-                tree:{cats:['phe']}};
+                tree:{cats:['phe']},gem:{cats:['glet']}};
 let CFGS=load(KC,{})||{};
 APPS.forEach(a=>{
   CFGS[a.id]=Object.assign({},BASE,DEFAULTS[a.id],CFGS[a.id]||{});
@@ -860,11 +911,6 @@ function buildPool(cats,scheme,nums){
      ask:i=>'Which path carries the letter meaning this?',
      rask:'What does the blinking path\u2019s letter mean?',
      opt:j=>({v:j,text:HEB[j].m})},
-    {c:'pge',f:'Value \u2192 path',    r:'Path \u2192 value',   grid:'keys',
-     main:i=>String(HEB[i].g),
-     ask:i=>'Which path carries this value?',
-     rask:'What is the value of the blinking path\u2019s letter?',
-     opt:j=>({v:j,num:HEB[j].g})}
   ];
   TDIM.forEach(d=>{
     if(!has(d.c))return;
@@ -880,6 +926,35 @@ function buildPool(cats,scheme,nums){
           qcat:d.f,main:d.main(i),mainCls:d.cls,sub:d.ask(i),note:note}));
       }
     });
+  });
+
+  /* Gematria runs either way round. Choices stay inside the collection
+     being drilled. The answer is the value itself rather than the item,
+     so where two names share a number — Tzaphkiel and Raphael both 311 —
+     either reading is accepted, and the value is asked only once. */
+  GEMSETS.forEach(G=>{
+    if(!has(G.k))return;
+    const rev=!!CFG.rev;
+    const vals=[...new Set(G.items.map(it=>gval(it.h)))].sort((a,b)=>a-b);
+    if(rev){
+      const opts=G.items.map(it=>({v:gval(it.h),g:it.h,n:it.n,cls:'heb'}));
+      vals.forEach(v=>{
+        const who=G.items.filter(it=>gval(it.h)===v);
+        Q.push(mk({cat:G.k,key:G.k+'.r.'+v,kind:'sym',ans:v,grid:'signs',
+          qcat:'Value \u2192 '+G.one.toLowerCase(),main:String(v),
+          sub:'Which '+G.one.toLowerCase()+' has this value?',opts:opts,
+          note:who.map(x=>x.n+' '+x.h).join(', ')+' = '+v}));
+      });
+    }else{
+      const opts=vals.map(v=>({v:v,num:v}));
+      G.items.forEach((it,i)=>{
+        const v=gval(it.h);
+        Q.push(mk({cat:G.k,key:G.k+'.'+i,kind:'sym',ans:v,
+          qcat:G.one+' \u2192 value',main:it.h,mainCls:G.word?'hebw':'heb',
+          sub:it.n+' \u2014 what is its value?',opts:opts,
+          note:it.n+' '+it.h+' = '+v}));
+      });
+    }
   });
 
   if(has('dsc')){
@@ -1217,13 +1292,14 @@ function syncSeg(id,key){
   [...$(id).children].forEach(x=>x.setAttribute('aria-pressed',String(CFG[key])===x.dataset.v?'true':'false'));
 }
 function syncBlocks(){
-  const dig=APP.id==='dig', tar=APP.id==='tar', tree=APP.id==='tree';
+  const dig=APP.id==='dig', tar=APP.id==='tar', tree=APP.id==='tree',
+        gem=APP.id==='gem';
   // triplicity scheme only matters when triplicities are being drilled
   $('tripBlock').style.display=(dig&&CFG.cats.includes('trip'))?'':'none';
   // the choice count only shapes the key-to-trump grid
   $('trumpOptBlock').style.display=(tar&&CFG.cats.includes('tk2n'))?'':'none';
   $('numBlock').style.display=(APP.id==='dec')?'':'none';
-  $('revBlock').style.display=tree?'':'none';
+  $('revBlock').style.display=(tree||gem)?'':'none';
   // weighting does nothing when the whole pool is used, or with no history yet
   const anyHistory=catsOf(APP.id).some(c=>Object.keys(LEDGER).some(k=>LEDGER[k].seen&&keyCat(k)===c));
   $('selBlock').style.display=(CFG.len!=='All'&&anyHistory)?'':'none';
@@ -1237,7 +1313,8 @@ function keyCat(k){
   const p=k.split('.')[0];
   return {dom:'dom',det:'det',ex:'exf',exd:'exf',fa:'exf',trip:'trip',bnd:'bnd',fac:'fac',
           sect:'sct',joy:'sct',dsc:'dsc',dcps:'dcps',
-          phe:'phe',pas:'pas',pta:'pta',pme:'pme',pge:'pge'}[p];
+          phe:'phe',pas:'pas',pta:'pta',pme:'pme',
+          glet:'glet',gsep:'gsep',garc:'garc',gnam:'gnam',gwld:'gwld'}[p];
 }
 /* A weak spot is an item you have got wrong and not yet answered cleanly
    CLEAN_RUNS times in a row since, or one you are still noticeably slower on
@@ -1396,6 +1473,8 @@ function openApp(id){
   renderChips();renderLens();
   syncSeg('tripseg','trip');syncSeg('weakseg','weak');syncSeg('toptseg','topt');syncSeg('numseg','nums');
   syncSeg('revseg','rev');
+  const rl=REVLAB[APP.id];
+  if(rl)[...$('revseg').children].forEach((b,i)=>{b.textContent=rl[i]});
   syncBlocks();renderBestLine();renderTrumpLedger();renderWeakBlock();
   show('s-setup');
 }
