@@ -10,7 +10,7 @@
 <title>Golden Drill</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --ground:#fbf9f4;
@@ -26,6 +26,7 @@
   --wrong:#a32718;
   --onaccent:#ffffff;
   --serif:'EB Garamond',Georgia,serif;
+  --heb:'Rashi Script','SBL Hebrew','Cardo',serif;
   --mono:'Spline Sans Mono',ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -133,6 +134,9 @@ html.drilling,html.drilling body{height:100%;overflow:hidden}
 html.drilling .wrap{height:100vh;height:100dvh;min-height:0;overflow:hidden;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 html.drilling #s-drill{min-height:0}
 html.drilling .stage{min-height:0;overflow:hidden}
+html.drilling #s-drill.treeq .stage{flex:0 0 auto;overflow:visible}
+html.drilling #s-drill.pathq .stage{flex:0 0 auto}
+html.drilling #s-drill.pathq .answers.tree-host{flex:1}
 html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .hud .clock{font-variant-numeric:tabular-nums;font-size:14px;color:var(--dim)}
 .progress{height:3px;background:var(--edge-soft);margin-top:8px;border-radius:2px;overflow:hidden}
@@ -183,6 +187,28 @@ html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:t
 .opt.wrong{border-color:var(--wrong);box-shadow:inset 0 0 0 1px var(--wrong);background:#f6e0dc;opacity:.7}
 .opt:disabled{cursor:default}
 .opt.dim{opacity:.4}
+/* --- the Tree of Life ------------------------------------------------
+   Ported from the standalone trainer: each path is two rails (an ink band
+   with a ground-coloured core), drawn back-to-front so crossings read as
+   over/under, with the sephiroth painted on top so rails stop clean. */
+.answers.tree-host{display:flex;justify-content:center;align-items:center;
+  grid-template-columns:none;min-height:0}
+.tree{display:block;max-width:100%;overflow:visible}
+.answers.tree-host .tree{height:100%;width:100%}
+#qribbon .tree{height:min(34vh,320px);width:100%;margin:0 auto}
+.tree .seph{font-family:var(--heb);font-size:27px}
+.tree .edge{cursor:pointer}
+@media (hover:hover){.tree .edge:hover line.band-outer{stroke:var(--day)}}
+@keyframes edgeBlink{
+  0%,49%{stroke:var(--common);stroke-width:36}
+  50%,100%{stroke:var(--ink);stroke-width:26.4}
+}
+.tree .edge.blink line.band-outer{animation:edgeBlink .62s steps(1,end) infinite;
+  filter:drop-shadow(0 0 5px var(--common))}
+.tree .edge.got line.band-outer{stroke:var(--common);filter:drop-shadow(0 0 6px var(--common))}
+.tree .edge.miss line.band-outer{stroke:var(--wrong);filter:drop-shadow(0 0 6px var(--wrong))}
+.qmain.heb{font-family:var(--heb);font-size:clamp(56px,15vw,92px);line-height:1}
+.opt .og.heb{font-family:var(--heb)}
 #qribbon .faces{height:30px;margin-top:4px}
 #qribbon .fseg{font-size:19px}
 
@@ -304,6 +330,14 @@ html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:t
       <button data-v="0">2·5·8</button>
       <button data-v="1">3·6·9</button>
       <button data-v="2">4·7·10</button>
+    </div>
+  </div>
+
+  <div class="block" id="revBlock">
+    <div class="blabel">Direction</div>
+    <div class="seg" id="revseg">
+      <button data-v="0">Symbol → path</button>
+      <button data-v="1">Path → symbol</button>
     </div>
   </div>
 
@@ -454,6 +488,108 @@ const TRUMPS=['The Fool','The Magician','The High Priestess','The Empress','The 
 'The Moon','The Sun','Judgement','The World'];
 const SEQ22=TRUMPS.map((_,i)=>i);
 
+/* --- the 22 paths of the Tree -----------------------------------------
+   One index, four tables: EDGES[i] joins two sephiroth, and HEB[i],
+   TRUMPS[i] and TASTRO[i] are the letter, trump and sign riding it. */
+const SEPH=['Kether','Chokmah','Binah','Chesed','Geburah','Tiphareth','Netzach','Hod','Yesod','Malkuth'];
+const SEPHHE={Kether:'\u05db\u05ea\u05e8',Chokmah:'\u05d7\u05db\u05de\u05d4',Binah:'\u05d1\u05d9\u05e0\u05d4',
+  Chesed:'\u05d7\u05e1\u05d3',Geburah:'\u05d2\u05d1\u05d5\u05e8\u05d4',Tiphareth:'\u05ea\u05e4\u05d0\u05e8\u05ea',
+  Netzach:'\u05e0\u05e6\u05d7',Hod:'\u05d4\u05d5\u05d3',Yesod:'\u05d9\u05e1\u05d5\u05d3',Malkuth:'\u05de\u05dc\u05db\u05d5\u05ea'};
+const EDGES=[['Kether','Chokmah'],['Kether','Binah'],['Kether','Tiphareth'],['Chokmah','Binah'],
+  ['Chokmah','Tiphareth'],['Chokmah','Chesed'],['Binah','Tiphareth'],['Binah','Geburah'],
+  ['Chesed','Geburah'],['Chesed','Tiphareth'],['Chesed','Netzach'],['Geburah','Tiphareth'],
+  ['Geburah','Hod'],['Tiphareth','Netzach'],['Tiphareth','Yesod'],['Tiphareth','Hod'],
+  ['Netzach','Hod'],['Netzach','Yesod'],['Netzach','Malkuth'],['Hod','Yesod'],
+  ['Hod','Malkuth'],['Yesod','Malkuth']];
+const HEB=[
+  {n:'Aleph',ch:'\u05d0',g:1,m:'ox'},           {n:'Beth',ch:'\u05d1',g:2,m:'house'},
+  {n:'Gimel',ch:'\u05d2',g:3,m:'camel'},        {n:'Daleth',ch:'\u05d3',g:4,m:'door'},
+  {n:'Heh',ch:'\u05d4',g:5,m:'window'},         {n:'Vav',ch:'\u05d5',g:6,m:'pin, hook'},
+  {n:'Zayin',ch:'\u05d6',g:7,m:'sword, armor'}, {n:'Cheth',ch:'\u05d7',g:8,m:'fence, enclosure'},
+  {n:'Teth',ch:'\u05d8',g:9,m:'snake'},         {n:'Yod',ch:'\u05d9',g:10,m:'hand'},
+  {n:'Kaph',ch:'\u05db',g:20,m:'fist'},         {n:'Lamed',ch:'\u05dc',g:30,m:'ox goad'},
+  {n:'Mem',ch:'\u05de',g:40,m:'water'},         {n:'Nun',ch:'\u05e0',g:50,m:'fish'},
+  {n:'Samekh',ch:'\u05e1',g:60,m:'prop'},       {n:'Ayin',ch:'\u05e2',g:70,m:'eye'},
+  {n:'Peh',ch:'\u05e4',g:80,m:'mouth'},         {n:'Tzaddi',ch:'\u05e6',g:90,m:'fish-hook'},
+  {n:'Qoph',ch:'\u05e7',g:100,m:'ear, back of head'}, {n:'Resh',ch:'\u05e8',g:200,m:'head'},
+  {n:'Shin',ch:'\u05e9',g:300,m:'tooth'},       {n:'Tav',ch:'\u05ea',g:400,m:'cross'}];
+/* What rides each path, named by the app's own keys so the glyphs and
+   sect/element colours are the ones the decanate drill already uses.
+   Only the three mother letters need their own mark. */
+const TATTR=['air','me','mo','ve','ari','tau','gem','can','leo','vir','ju','lib',
+             'water','sco','sag','cap','ma','aqu','pis','su','fire','sa'];
+const ELG={fire:'\ud83d\udf02'+VS,air:'\ud83d\udf01'+VS,
+           water:'\ud83d\udf04'+VS,earth:'\ud83d\udf03'+VS};
+function tattr(i){
+  const k=TATTR[i];
+  if(ELN[k])return {g:ELG[k],n:ELN[k],cls:'e-'+k};
+  if(PL[k])return {g:PL[k].g,n:PL[k].n,cls:sc(k)};
+  const sg=SIGNS.find(x=>x.k===k);
+  return {g:sg.g,n:sg.n,cls:ec(sg)};
+}
+
+/* geometry: pillar x, level y as a fraction of an 800-tall drawable */
+const TCFG={r:47,rail:2.2,gap:22,cs:2.2,mt:40,mb:10,H:800,x:{L:110,C:260,R:410}};
+const TLEV=(()=>{const SC=0.14,ET=0.33,sh=ET-SC,T=(SC+ET)/2+sh;
+  return {K:0.05,SC:SC,ET:ET,T:T,AS:ET+sh,Y:T+sh,M:T+2*sh}})();
+const TY=t=>TCFG.mt+t*(TCFG.H-TCFG.mt-TCFG.mb);
+const TNODES=(()=>{const o={};
+  [['Kether','C','K'],['Chokmah','R','SC'],['Binah','L','SC'],['Chesed','R','ET'],
+   ['Geburah','L','ET'],['Tiphareth','C','T'],['Netzach','R','AS'],['Hod','L','AS'],
+   ['Yesod','C','Y'],['Malkuth','C','M']].forEach(([n,px,lv])=>
+     o[n]={x:TCFG.x[px],y:TY(TLEV[lv])});
+  return o})();
+const SVGNS='http://www.w3.org/2000/svg';
+const svgEl=(n,a)=>{const e=document.createElementNS(SVGNS,n);
+  for(const k in a)e.setAttribute(k,a[k]);return e};
+/* vertical paths sit behind, horizontal in the middle, diagonals in front */
+const edgeDepth=(A,B)=>Math.abs(B.x-A.x)<1e-6?0:(Math.abs(B.y-A.y)<1e-6?1:2);
+const trimTo=(A,B,pad)=>{const dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy)||1;
+  return {A:{x:A.x+dx/L*pad,y:A.y+dy/L*pad},B:{x:B.x-dx/L*pad,y:B.y-dy/L*pad}}};
+
+/* Draw the Tree into host. onPick, if given, makes the paths tappable and
+   receives (index, group). Returns the edge groups by path index. */
+function buildTree(host,onPick){
+  host.innerHTML='';
+  const svg=svgEl('svg',{viewBox:'0 0 520 700',class:'tree','aria-label':'Tree of Life'});
+  const rails=svgEl('g',{fill:'none','stroke-linecap':'round','stroke-linejoin':'round'});
+  const outerW=TCFG.gap+2*TCFG.rail, groups=[];
+  EDGES.forEach(([a,b],i)=>{
+    const A=TNODES[a],B=TNODES[b];
+    const g=svgEl('g',{class:'edge','data-i':String(i)});
+    const seg={x1:A.x,y1:A.y,x2:B.x,y2:B.y,'pointer-events':'none','stroke-linecap':'butt'};
+    g.appendChild(svgEl('line',Object.assign({},seg,{stroke:'var(--ink)',
+      'stroke-width':String(outerW),'data-basew':String(outerW),class:'band-outer'})));
+    g.appendChild(svgEl('line',Object.assign({},seg,{stroke:'var(--ground)',
+      'stroke-width':String(Math.max(0.1,TCFG.gap)),class:'band-inner'})));
+    const t=trimTo(A,B,TCFG.r+TCFG.cs*0.5+1);
+    g.appendChild(svgEl('line',{x1:t.A.x,y1:t.A.y,x2:t.B.x,y2:t.B.y,stroke:'transparent',
+      'stroke-width':String(outerW),'pointer-events':onPick?'stroke':'none',
+      'stroke-linecap':'butt',class:'hit'}));
+    if(onPick) g.addEventListener('click',()=>onPick(i,g));
+    /* Samekh rides over Peh so the centre stays easy to hit; Gimel and
+       Teth weave with the diagonals rather than under them */
+    const depth=(i===14)?99:(i===2)?2.5:(i===8)?2:edgeDepth(A,B);
+    groups.push({g,depth,i});
+  });
+  groups.slice().sort((p,q)=>(p.depth-q.depth)||(p.i-q.i)).forEach(o=>rails.appendChild(o.g));
+  svg.appendChild(rails);
+  const fill=svgEl('g',{fill:'var(--ground)',stroke:'none','pointer-events':'none'});
+  const ring=svgEl('g',{fill:'none',stroke:'var(--ink)','stroke-width':String(TCFG.cs),'pointer-events':'none'});
+  const lab=svgEl('g',{fill:'var(--ink)','pointer-events':'none','text-anchor':'middle',
+    direction:'rtl',class:'seph'});
+  SEPH.forEach(n=>{
+    const p=TNODES[n];
+    fill.appendChild(svgEl('circle',{cx:p.x,cy:p.y,r:TCFG.r}));
+    ring.appendChild(svgEl('circle',{cx:p.x,cy:p.y,r:TCFG.r}));
+    const t=svgEl('text',{x:p.x,y:p.y+9});t.textContent=SEPHHE[n];lab.appendChild(t);
+  });
+  svg.appendChild(fill);svg.appendChild(ring);svg.appendChild(lab);
+  host.appendChild(svg);
+  const byI={};groups.forEach(o=>byI[o.i]=o.g);
+  return byI;
+}
+
 /* --- the 36 decanates -------------------------------------------------
    Ruler: Chaldean order from Mars at 0° Aries (identical to the faces).
    Card:  suit from the sign's element, number from its mode —
@@ -473,7 +609,7 @@ const suitIcon=(c,cls)=>'<svg class="'+(cls||'')+'" aria-hidden="true"><use href
   SUITS[cardSuit(c)].k+'"/></svg>';
 const suitCls=c=>'e-'+SUITS[cardSuit(c)].el;
 const DECLABEL=['first','second','third'];
-const NUMKIND={house:1,key:1,trump:1,card:1};
+const NUMKIND={house:1,key:1,trump:1,card:1,sym:1};
 const HOUSES=['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'];
 /* ============================================================
    ADDING A DRILL
@@ -492,7 +628,10 @@ const APPS=[
    lede:'The twenty-two trumps, name to key and key to name.'},
   {id:'dec',title:'Minor Arcana <em>decanates</em>',plain:'Minor Arcana decanates',
    sub:'Golden Dawn attributions',
-   lede:'Thirty-six decans, each with its small card and its planetary ruler.'}
+   lede:'Thirty-six decans, each with its small card and its planetary ruler.'},
+  {id:'tree',title:'Paths of the <em>Tree</em>',plain:'Paths of the Tree',
+   sub:'Golden Dawn attributions',
+   lede:'The twenty-two paths, by letter, trump, sign, meaning and value.'}
 ];
 const CATS=[
   {k:'dom', label:'Domiciles',          app:'dig'},
@@ -505,7 +644,12 @@ const CATS=[
   {k:'tn2k',label:'Trump → key',        app:'tar'},
   {k:'tk2n',label:'Key → trump',        app:'tar'},
   {k:'dcps',label:'Card → ruler & sign',app:'dec'},
-  {k:'dsc', label:'Decan → card',       app:'dec'}
+  {k:'dsc', label:'Decan → card',       app:'dec'},
+  {k:'phe', label:'Letter',             app:'tree'},
+  {k:'pas', label:'Sign & planet',      app:'tree'},
+  {k:'pta', label:'Trump',              app:'tree'},
+  {k:'pme', label:'Letter meaning',     app:'tree'},
+  {k:'pge', label:'Value',              app:'tree'}
 ];
 const CATNAME={};CATS.forEach(c=>CATNAME[c.k]=c.label);
 const catsOf=id=>CATS.filter(c=>c.app===id).map(c=>c.k);
@@ -524,8 +668,9 @@ const KB='ed.best.v2', KL='ed.ledger.v2', KC='ed.cfg.v5';
 function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let BEST=load(KB,{}), LEDGER=load(KL,{});
-const BASE={len:'All',weak:0,trip:'dor',topt:22,nums:'all'};
-const DEFAULTS={dig:{cats:['dom','det','exf']},tar:{cats:['tn2k','tk2n']},dec:{cats:['dcps']}};
+const BASE={len:'All',weak:0,trip:'dor',topt:22,nums:'all',rev:0};
+const DEFAULTS={dig:{cats:['dom','det','exf']},tar:{cats:['tn2k','tk2n']},dec:{cats:['dcps']},
+                tree:{cats:['phe']}};
 let CFGS=load(KC,{})||{};
 APPS.forEach(a=>{
   CFGS[a.id]=Object.assign({},BASE,DEFAULTS[a.id],CFGS[a.id]||{});
@@ -687,6 +832,52 @@ function buildPool(cats,scheme,nums){
         note:PL[p].n+' has his joy in the '+HOUSES[JOY[p]-1]+' house.'}));
     });
   }
+  /* The Tree drills one relation in two directions. Forward (the original
+     trainer) shows a symbol and you tap its path; reverse blinks a path
+     and you name what rides it. CFG.rev picks the direction. */
+  const TDIM=[
+    {c:'phe',f:'Letter \u2192 path',   r:'Path \u2192 letter',  grid:'signs',
+     main:i=>HEB[i].ch, cls:'heb',
+     ask:i=>'Which path does '+HEB[i].n+' ride?',
+     rask:'Which letter rides the blinking path?',
+     opt:j=>({v:j,g:HEB[j].ch,n:HEB[j].n,cls:'heb'})},
+    {c:'pas',f:'Sign \u2192 path',     r:'Path \u2192 sign',    grid:'signs',
+     main:i=>'<span class="'+tattr(i).cls+'">'+tattr(i).g+'</span>',
+     ask:i=>'Which path does '+tattr(i).n+' ride?',
+     rask:'Which sign or planet rides the blinking path?',
+     opt:j=>({v:j,g:tattr(j).g,n:tattr(j).n,cls:tattr(j).cls})},
+    {c:'pta',f:'Trump \u2192 path',    r:'Path \u2192 trump',   grid:'trumps',
+     main:i=>TRUMPS[i],
+     ask:i=>'Which path does this trump ride?',
+     rask:'Which trump rides the blinking path?',
+     opt:j=>({v:j,text:TRUMPS[j]})},
+    {c:'pme',f:'Meaning \u2192 path',  r:'Path \u2192 meaning', grid:'trumps',
+     main:i=>HEB[i].m,
+     ask:i=>'Which path carries the letter meaning this?',
+     rask:'What does the blinking path\u2019s letter mean?',
+     opt:j=>({v:j,text:HEB[j].m})},
+    {c:'pge',f:'Value \u2192 path',    r:'Path \u2192 value',   grid:'keys',
+     main:i=>String(HEB[i].g),
+     ask:i=>'Which path carries this value?',
+     rask:'What is the value of the blinking path\u2019s letter?',
+     opt:j=>({v:j,num:HEB[j].g})}
+  ];
+  TDIM.forEach(d=>{
+    if(!has(d.c))return;
+    const rev=!!CFG.rev, opts=rev?SEQ22.map(j=>d.opt(j)):null;
+    SEQ22.forEach(i=>{
+      const note=HEB[i].n+' '+HEB[i].ch+' \u00b7 '+EDGES[i][0]+'\u2013'+EDGES[i][1]+
+        ' \u00b7 '+TRUMPS[i]+' \u00b7 '+tattr(i).n+' \u00b7 '+HEB[i].g+' \u00b7 '+HEB[i].m;
+      if(rev){
+        Q.push(mk({cat:d.c,key:d.c+'.r.'+i,kind:'sym',ans:i,tree:i,grid:d.grid,
+          qcat:d.r,main:'',sub:d.rask,opts:opts,note:note}));
+      }else{
+        Q.push(mk({cat:d.c,key:d.c+'.'+i,kind:'path',ans:i,
+          qcat:d.f,main:d.main(i),mainCls:d.cls,sub:d.ask(i),note:note}));
+      }
+    });
+  });
+
   if(has('dsc')){
     SIGNS.forEach((sg,si)=>{
       for(let j=0;j<3;j++){
@@ -789,11 +980,16 @@ function renderQ(){
   $('qmain').className='qmain'+(q.mainCls?' '+q.mainCls:'');
   $('qmain').innerHTML=main;
   $('qsub').textContent=q.sub;
+  $('s-drill').classList.toggle('treeq',q.tree!==undefined);
+  $('s-drill').classList.toggle('pathq',q.kind==='path');
 
   if(q.cat==='bnd'){
     $('qribbon').innerHTML=ribbonHTML(q.sign,{blank:true,tick:q.deg,noFaces:true,scale:true});
   }else if(q.cat==='fac'){
     $('qribbon').innerHTML=ribbonHTML(q.sign,{blank:true,hlFace:q.face,scale:true});
+  }else if(q.tree!==undefined){
+    /* the stage carries the Tree itself, so it keeps its natural height */
+    buildTree($('qribbon'),null)[q.tree].classList.add('blink');
   }else $('qribbon').innerHTML='';
 
   const box=$('answers');box.className='answers';
@@ -823,6 +1019,24 @@ function renderQ(){
     kbuf='';clearTimeout(kbufT);
     return;
   }
+  else if(q.kind==='path'){
+    /* the tree itself is the answer surface: wrong taps flash and cost a
+       clean answer, the right one flashes and carries the run on */
+    box.className='answers tree-host';
+    buildTree(box,(i,g)=>{
+      if(RUN.locked)return;
+      if(i!==q.ans){
+        slip(q);g.classList.add('miss');
+        setTimeout(()=>g.classList.remove('miss'),380);
+        return;
+      }
+      g.classList.add('got');commitCorrect(q,300);
+    });
+    RUN.locked=false;RUN.tq=performance.now();RUN.pair={p:false,s:false};
+    kbuf='';clearTimeout(kbufT);
+    return;
+  }
+  else if(q.kind==='sym'){if(q.grid)box.classList.add(q.grid);opts=q.opts;}
   else if(q.kind==='card'){box.classList.add('cards');
     opts=SEQ36.map(c=>({v:c,html:'<span class="'+suitCls(c)+'">'+suitIcon(c)+'</span>'+cardNum(c),k:'card'}));}
   else if(q.kind==='trump'){box.classList.add('trumps');
@@ -866,7 +1080,7 @@ function answer(btn,q){
   if(val!==q.ans){slip(q);shut(btn);return}   // wrong: close that door, say nothing else
   commitCorrect(q);
 }
-function commitCorrect(q){
+function commitCorrect(q,hold){
   RUN.locked=true;
   const dt=performance.now()-RUN.tq, clean=!RUN.slipped[RUN.i];
   const L=LEDGER[q.key]||(LEDGER[q.key]={seen:0,wrong:0});
@@ -876,7 +1090,7 @@ function commitCorrect(q){
   const P=RUN.per[q.cat]||(RUN.per[q.cat]={n:0,r:0});P.n++;if(clean)P.r++;
   RUN.log.push({q,ok:clean,dt});
   if(clean)RUN.right++;
-  next();
+  if(hold)setTimeout(next,hold);else next();
 }
 function next(){
   if(!RUN||!$('s-drill').classList.contains('live'))return;
@@ -886,7 +1100,7 @@ function next(){
 
 /* ---------------- results ---------------- */
 function cfgKey(){
-  return APP.id+'|'+(RUN.subset?'weak':CFG.cats.slice().sort().join('+'))+'|'+RUN.qs.length+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums;
+  return APP.id+'|'+(RUN.subset?'weak':CFG.cats.slice().sort().join('+'))+'|'+RUN.qs.length+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums+'|'+CFG.rev;
 }
 function finish(){
   clearInterval(clockTimer);
@@ -999,12 +1213,13 @@ function syncSeg(id,key){
   [...$(id).children].forEach(x=>x.setAttribute('aria-pressed',String(CFG[key])===x.dataset.v?'true':'false'));
 }
 function syncBlocks(){
-  const dig=APP.id==='dig', tar=APP.id==='tar';
+  const dig=APP.id==='dig', tar=APP.id==='tar', tree=APP.id==='tree';
   // triplicity scheme only matters when triplicities are being drilled
   $('tripBlock').style.display=(dig&&CFG.cats.includes('trip'))?'':'none';
   // the choice count only shapes the key-to-trump grid
   $('trumpOptBlock').style.display=(tar&&CFG.cats.includes('tk2n'))?'':'none';
   $('numBlock').style.display=(APP.id==='dec')?'':'none';
+  $('revBlock').style.display=tree?'':'none';
   // weighting does nothing when the whole pool is used, or with no history yet
   const anyHistory=catsOf(APP.id).some(c=>Object.keys(LEDGER).some(k=>LEDGER[k].seen&&keyCat(k)===c));
   $('selBlock').style.display=(CFG.len!=='All'&&anyHistory)?'':'none';
@@ -1017,7 +1232,8 @@ function keyCat(k){
   if(k.indexOf('trump.k2n.')===0)return 'tk2n';
   const p=k.split('.')[0];
   return {dom:'dom',det:'det',ex:'exf',exd:'exf',fa:'exf',trip:'trip',bnd:'bnd',fac:'fac',
-          sect:'sct',joy:'sct',dsc:'dsc',dcps:'dcps'}[p];
+          sect:'sct',joy:'sct',dsc:'dsc',dcps:'dcps',
+          phe:'phe',pas:'pas',pta:'pta',pme:'pme',pge:'pge'}[p];
 }
 /* A weak spot is an item you have got wrong and not yet answered cleanly
    CLEAN_RUNS times in a row since, or one you are still noticeably slower on
@@ -1142,7 +1358,7 @@ function renderTrumpLedger(){
 function renderBestLine(){
   const tot=buildPool(CFG.cats,CFG.trip,CFG.nums).length;
   const n=CFG.len==='All'?tot:CFG.len;
-  const k=APP.id+'|'+CFG.cats.slice().sort().join('+')+'|'+Math.min(n,tot)+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums;
+  const k=APP.id+'|'+CFG.cats.slice().sort().join('+')+'|'+Math.min(n,tot)+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums+'|'+CFG.rev;
   $('bestline').textContent=BEST[k]?'Best clean run for this set · '+fmt(BEST[k]):'No clean run recorded for this set';
 }
 
@@ -1150,6 +1366,7 @@ segWire('tripseg','trip',false,()=>{renderTable();renderChips();syncBlocks();ren
 segWire('weakseg','weak',true);
 segWire('toptseg','topt',true,()=>renderBestLine());
 segWire('numseg','nums',false,()=>{renderChips();renderBestLine();});
+segWire('revseg','rev',true,()=>{renderChips();renderBestLine();});
 
 function renderMenu(){
   $('applist').innerHTML=APPS.map(a=>{
@@ -1174,6 +1391,7 @@ function openApp(id){
   if(APP.id==='dec') renderWheel();
   renderChips();renderLens();
   syncSeg('tripseg','trip');syncSeg('weakseg','weak');syncSeg('toptseg','topt');syncSeg('numseg','nums');
+  syncSeg('revseg','rev');
   syncBlocks();renderBestLine();renderTrumpLedger();renderWeakBlock();
   show('s-setup');
 }
