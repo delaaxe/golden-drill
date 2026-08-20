@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dignities">
+<meta name="theme-color" content="#fbf9f4">
+<title>Essential Dignities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#fbf9f4;
+  --panel:#efece3;
+  --panel2:#e4e0d3;
+  --edge:#c9c4b6;
+  --edge-soft:#ddd8ca;
+  --ink:#16151a;
+  --dim:#4e4c55;
+  --day:#8a5306;      /* diurnal sect */
+  --night:#0f5578;    /* nocturnal sect */
+  --common:#2f6526;   /* Mercury, common */
+  --wrong:#a32718;
+  --onaccent:#ffffff;
+  --serif:'EB Garamond',Georgia,serif;
+  --mono:'Spline Sans Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--ground)}
+body{
+  color:var(--ink);
+  font-family:var(--mono);font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--day);outline-offset:2px}
+
+/* background painted on a real element, not the canvas */
+.wrap{max-width:960px;margin:0 auto;min-height:100vh;background:var(--ground);
+  display:flex;flex-direction:column;
+  padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+          calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+h1{font-family:var(--serif);font-weight:500;font-size:32px;line-height:1;margin:4px 0 0}
+h1 em{font-style:italic;color:var(--day)}
+h2{font-family:var(--serif);font-weight:500;font-size:21px;margin:0 0 7px}
+.lede{color:var(--dim);margin:5px 0 0;max-width:60ch;font-size:13.5px}
+
+.screen{display:none;flex:1;flex-direction:column}
+.screen.live{display:flex}
+
+/* ---------- ribbons ---------- */
+.ribbon{position:relative}
+.bounds{display:flex;height:32px;border-radius:2px;overflow:hidden;border:1px solid var(--edge)}
+.bseg{display:flex;align-items:center;justify-content:center;font-size:18px;
+      border-right:1px solid var(--edge);background:var(--panel)}
+.bseg:last-child{border-right:none}
+.blankbar{background:var(--panel);
+  background-image:linear-gradient(90deg,transparent calc(33.333% - 1px),var(--edge) calc(33.333% - 1px),
+    var(--edge) 33.333%,transparent 33.333%,transparent calc(66.666% - 1px),
+    var(--edge) calc(66.666% - 1px),var(--edge) 66.666%,transparent 66.666%)}
+.faces{display:flex;height:11px;margin-top:3px;gap:2px}
+.fseg{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;
+  background:var(--panel);border:1px solid var(--edge-soft);border-radius:1px;color:var(--dim)}
+.fseg.hl{background:#f2e2c2;border-color:var(--day)}
+.tick{position:absolute;top:-6px;bottom:-4px;width:2px;background:var(--wrong)}
+.tick::before{content:'';position:absolute;top:-4px;left:-3px;width:8px;height:8px;
+  background:var(--wrong);border-radius:50%}
+.scaleline{display:flex;justify-content:space-between;color:var(--dim);font-size:10.5px;
+  margin:4px 0 0;letter-spacing:.06em}
+.scaleline.mini{font-size:10px}
+.p-day{color:var(--day)} .p-night{color:var(--night)} .p-common{color:var(--common)}
+.e-fire{color:#b03612} .e-earth{color:#2f6b34} .e-air{color:#7c6300} .e-water{color:#14567a}
+
+/* ---------- rulership table ---------- */
+.tablescroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
+table.dig{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+table.dig th{font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);text-align:left;padding:0 9px 6px;border-bottom:1px solid var(--edge);white-space:nowrap}
+table.dig td{padding:5px 9px;border-bottom:1px solid var(--edge-soft);white-space:nowrap}
+table.dig tbody tr:nth-child(even){background:rgba(0,0,0,.028)}
+table.dig td.sg{font-size:22px}
+table.dig td.sg small{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:6px}
+.gl{font-size:21px}
+.deg{font-size:11px;color:var(--dim);margin-left:3px}
+.na{color:var(--dim);opacity:.55}
+.foot{color:var(--dim);font-size:12.5px;margin-top:9px;max-width:72ch}
+.foot b{color:var(--ink);font-weight:600}
+
+/* ---------- controls ---------- */
+.block{margin-top:16px}
+.refblock{margin-top:26px;padding-top:18px;border-top:1px solid var(--edge)}
+.blabel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.applist{display:grid;gap:10px;margin-top:18px}
+.appcard{display:block;width:100%;text-align:left;border:1px solid var(--edge);border-radius:3px;
+  background:var(--ground);padding:16px 18px}
+.appcard:active{background:var(--panel)}
+.appcard h3{font-family:var(--serif);font-weight:500;font-size:24px;margin:0;line-height:1.15}
+.appcard .sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.appcard .meta{font-size:12.5px;color:var(--dim);margin-top:7px}
+.appcard .go{float:right;font-size:20px;color:var(--day);line-height:1}
+.backlink{font-size:12.5px;color:var(--dim);padding:4px 0;margin:0 0 8px;align-self:flex-start}
+.hud .backlink{margin:0}
+.cgroup+.cgroup{margin-top:14px}
+.cghead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.cghead span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.chip{border:1px solid var(--edge);border-radius:3px;padding:9px 13px;font-size:13px;
+  color:var(--ink);background:var(--ground)}
+.chip .ct{font-size:12px;color:var(--dim);margin-left:7px}
+.chip[aria-pressed="true"]{background:var(--day);border-color:var(--day);color:var(--onaccent);font-weight:500}
+.chip[aria-pressed="true"] .ct{color:rgba(255,255,255,.82)}
+.seg{display:inline-flex;border:1px solid var(--edge);border-radius:3px;overflow:hidden}
+.seg button{padding:9px 15px;font-size:13px;color:var(--ink);border-right:1px solid var(--edge)}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed="true"]{background:var(--day);color:var(--onaccent);font-weight:500}
+.start{margin-top:18px;width:100%;padding:16px;border:1px solid var(--day);border-radius:3px;
+  background:var(--day);color:var(--onaccent);font-size:14px;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase}
+.start:active{opacity:.82}
+.textbtn{color:var(--dim);font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.utilrow{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+
+/* ---------- drill ---------- */
+.hud{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+/* the drill screen is a fixed frame: everything visible, nothing scrolls */
+html.drilling,html.drilling body{height:100%;overflow:hidden}
+html.drilling .wrap{height:100vh;height:100dvh;min-height:0;overflow:hidden;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+html.drilling #s-drill{min-height:0}
+html.drilling .stage{min-height:0;overflow:hidden}
+html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hud .clock{font-variant-numeric:tabular-nums;font-size:14px;color:var(--dim)}
+.progress{height:3px;background:var(--edge-soft);margin-top:8px;border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--day);width:0;transition:width .25s ease}
+.stage{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;padding:10px 0;gap:11px;min-height:120px}
+.qcat{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.qmain{font-family:var(--serif);font-size:clamp(38px,9vw,62px);line-height:1.05;font-weight:500;color:var(--ink)}
+.qmain .sgl{font-family:var(--mono);font-size:.72em}
+.qsub{color:var(--ink);font-size:15px;max-width:40ch}
+.qribbon{width:100%;max-width:540px}
+
+.answers{display:grid;gap:8px;grid-template-columns:repeat(4,1fr)}
+.answers.planets{grid-template-columns:repeat(7,1fr)}
+.answers.signs{grid-template-columns:repeat(4,1fr)}
+.answers.small{grid-template-columns:repeat(3,1fr)}
+.answers.keys{grid-template-columns:repeat(11,1fr)}
+.answers.trumps{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
+.answers.cards{grid-template-columns:repeat(9,1fr)}
+.answers.pair{display:block}
+.pairsec+.pairsec{margin-top:9px}
+.pairlab{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.pgrid{display:grid;gap:8px}
+.pgrid.planets{grid-template-columns:repeat(7,1fr)}
+.pgrid.signs{grid-template-columns:repeat(4,1fr)}
+.answers.pair .opt{padding:11px 4px;gap:3px}
+.answers.pair .opt .og{font-size:25px}
+.opt.got{border-color:var(--common);box-shadow:inset 0 0 0 1px var(--common);background:#e2efdd}
+.opt.card{flex-direction:row;gap:6px;padding:12px 2px;font-variant-numeric:tabular-nums;font-size:16px}
+.opt.card svg{width:17px;height:17px;flex:none}
+.qmain .cardline{display:inline-flex;align-items:center;gap:10px}
+.qmain .cardline svg{width:.62em;height:.62em}
+.wheel{display:block;width:100%;max-width:620px;margin:6px auto 0}
+.wlegend{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;margin-top:8px;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.wlegend span{display:inline-flex;align-items:center;gap:6px}
+.wlegend svg{width:15px;height:15px}
+.answers.keys .opt{padding:0;aspect-ratio:1/1;justify-content:center;font-size:20px}
+.opt .ot{font-family:var(--serif);font-size:17px;font-weight:500;line-height:1.15;text-align:center}
+.qmain.name{font-size:clamp(28px,6.2vw,46px)}
+.qmain.num{color:var(--day);font-variant-numeric:tabular-nums}
+.opt{border:1px solid var(--edge);border-radius:3px;padding:15px 4px;background:var(--ground);
+  display:flex;flex-direction:column;align-items:center;gap:5px}
+.opt .og{font-size:30px;line-height:1}
+.opt .on{font-size:12px;letter-spacing:.02em;color:var(--dim)}
+.opt.num{padding:20px 4px;font-size:22px;font-variant-numeric:tabular-nums}
+.opt:active{background:var(--panel)}
+.opt.wrong{border-color:var(--wrong);box-shadow:inset 0 0 0 1px var(--wrong);background:#f6e0dc;opacity:.7}
+.opt:disabled{cursor:default}
+.opt.dim{opacity:.4}
+#qribbon .faces{height:30px;margin-top:4px}
+#qribbon .fseg{font-size:19px}
+
+/* per-trump recall ledger */
+.ledger{margin-top:26px;padding-top:18px;border-top:1px solid var(--edge)}
+.lhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.lbars{display:grid;grid-template-columns:repeat(22,1fr);gap:3px;align-items:end;height:74px}
+.lbar{background:var(--panel2);border-radius:1px;min-height:3px}
+.lbar[data-band="fast"]{background:var(--common)}
+.lbar[data-band="mid"]{background:var(--day)}
+.lbar[data-band="slow"]{background:var(--wrong)}
+.lticks{display:grid;grid-template-columns:repeat(22,1fr);gap:3px;margin-top:5px}
+.lticks span{font-size:9px;color:var(--dim);text-align:center;line-height:1}
+
+/* ---------- results ---------- */
+.bigtime{font-family:var(--serif);font-size:56px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-top:16px}
+.stat{border-top:1px solid var(--edge);padding-top:8px}
+.stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.stat .v{font-family:var(--serif);font-size:26px;font-weight:500;line-height:1.2}
+.bars{margin-top:18px}
+.bar{display:grid;grid-template-columns:150px 1fr 46px;gap:10px;align-items:center;padding:5px 0;font-size:12.5px}
+.bar .track{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar .track i{display:block;height:100%;background:var(--day)}
+.bar .pc{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.missed{margin-top:24px;padding-top:18px;border-top:1px solid var(--edge)}
+.missed ul{margin:0;padding:0}
+.missed li,.weaklist li{list-style:none;display:flex;justify-content:space-between;gap:14px;padding:7px 0;
+  border-bottom:1px solid var(--edge-soft);font-size:13px}
+.weaklist{margin-top:8px}
+.weaklist ul{margin:0;padding:0}
+.weaklist .a{color:var(--wrong);white-space:nowrap;font-variant-numeric:tabular-nums}
+.start.alt{background:var(--ground);color:var(--day);margin-top:12px}
+.start.alt:active{background:var(--panel)}
+.missed .a{color:var(--day);font-weight:500;white-space:nowrap}
+.missed .t{color:var(--dim);font-weight:400;font-variant-numeric:tabular-nums;margin-left:6px}
+.btnrow{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}
+.btnrow button{flex:1;min-width:150px;padding:14px;border:1px solid var(--edge);border-radius:3px;
+  font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--ground)}
+.btnrow button.prime{border-color:var(--day);background:var(--day);color:var(--onaccent);font-weight:500}
+
+@media (max-width:560px){
+  .answers.planets{grid-template-columns:repeat(4,1fr)}
+  .answers.keys{grid-template-columns:repeat(6,1fr)}
+  .answers.trumps{grid-template-columns:repeat(2,1fr)}
+  .pgrid.planets{grid-template-columns:repeat(4,1fr)}
+  .pgrid.signs{grid-template-columns:repeat(3,1fr)}
+  .answers.pair .opt{padding:8px 3px}
+  .answers.pair .opt .og{font-size:21px}
+  .opt.card{flex-direction:column;gap:2px;padding:8px 1px;font-size:13px}
+  .opt.card svg{width:14px;height:14px}
+  .answers.trumps .opt{padding:9px 6px}
+  .opt .ot{font-size:14px}
+  .lticks span{font-size:0}
+}
+@media (max-width:430px){
+  h1{font-size:27px}
+  .opt{padding:11px 4px;gap:4px}
+  .opt.num{padding:15px 4px}
+  .bseg{font-size:14px}
+  .answers.signs{grid-template-columns:repeat(3,1fr)}
+  .opt .og{font-size:25px}
+  .bar{grid-template-columns:110px 1fr 40px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="si-w" viewBox="-9 -9 18 18">
+    <path d="M-5.4 7.2 L3.1-4.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>
+    <circle cx="4.6" cy="-6.2" r="2.9" fill="currentColor"/></symbol>
+  <symbol id="si-c" viewBox="-9 -9 18 18">
+    <path d="M-5.1-6.2 H5.1 C5.1-1.2 2.9 1.5 0 1.7 C-2.9 1.5 -5.1-1.2 -5.1-6.2 Z"
+      fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M0 1.7 V4.6 M-3.6 6.0 H3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="si-s" viewBox="-9 -9 18 18">
+    <path d="M0-8.6 L2.0-3.6 V3.2 H-2.0 V-3.6 Z" fill="currentColor"/>
+    <path d="M-4.8 3.4 H4.8 M0 3.4 V7.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="si-p" viewBox="-9 -9 18 18">
+    <circle r="7" fill="none" stroke="currentColor" stroke-width="1.7"/>
+    <path d="M0.00,-5.10 L3.00,4.13 L-4.85,-1.58 L4.85,-1.58 L-3.00,4.13 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+
+<!-- ============ MENU ============ -->
+<section class="screen live" id="s-menu">
+  <div class="eyebrow">Recall drills</div>
+  <h1>Choose a <em>drill</em></h1>
+  <p class="lede">Each drill keeps its own settings, records and history.</p>
+  <div class="applist" id="applist"></div>
+  <div class="utilrow">
+    <span class="eyebrow">Records are kept on this device</span>
+    <button class="textbtn" id="clearBtn">Clear all times and history</button>
+  </div>
+</section>
+
+<!-- ============ SETUP ============ -->
+<section class="screen" id="s-setup">
+  <button class="backlink" id="backMenu">← All drills</button>
+  <div class="eyebrow" id="appSub"></div>
+  <h1 id="appTitle"></h1>
+  <p class="lede" id="appLede"></p>
+
+  <div class="block">
+    <div id="cats"></div>
+  </div>
+
+  <div class="block">
+    <div class="blabel">Questions per run</div>
+    <div class="seg" id="lenseg"></div>
+  </div>
+
+  <div class="block" id="numBlock">
+    <div class="blabel">Card numbers</div>
+    <div class="seg" id="numseg">
+      <button data-v="all">All</button>
+      <button data-v="0">2·5·8</button>
+      <button data-v="1">3·6·9</button>
+      <button data-v="2">4·7·10</button>
+    </div>
+  </div>
+
+  <div class="block" id="trumpOptBlock">
+    <div class="blabel">Trump choices offered</div>
+    <div class="seg" id="toptseg">
+      <button data-v="4">4</button><button data-v="6">6</button><button data-v="8">8</button>
+      <button data-v="12">12</button><button data-v="22">All 22</button>
+    </div>
+  </div>
+
+  <div class="block" id="tripBlock">
+    <div class="blabel">Triplicity scheme</div>
+    <div class="seg" id="tripseg">
+      <button data-v="dor" aria-pressed="true">Dorothean</button>
+      <button data-v="ptol" aria-pressed="false">Lilly / Ptolemy</button>
+    </div>
+  </div>
+
+  <div class="block" id="selBlock">
+    <div class="blabel">Selection</div>
+    <div class="seg" id="weakseg">
+      <button data-v="0" aria-pressed="true">Even spread</button>
+      <button data-v="1" aria-pressed="false">Favour weak spots</button>
+    </div>
+  </div>
+
+  <button class="start" id="startBtn">Start drill</button>
+  <div class="utilrow">
+    <span id="bestline" class="eyebrow"></span>
+  </div>
+
+  <div class="block" id="weakBlock">
+    <div class="cghead"><span>Weak spots</span>
+      <button class="textbtn" id="weakForget">Forget these</button></div>
+    <div class="foot" id="weakBreak" style="margin-top:0"></div>
+    <div class="weaklist" id="weakTop"></div>
+    <button class="start alt" id="weakStart"></button>
+  </div>
+
+  <div class="ledger" id="trumpLedger">
+    <div class="lhead"><span class="blabel" style="margin:0">Mean recall by key</span>
+      <span class="foot" style="margin:0" id="ledgerMeta"></span></div>
+    <div class="lbars" id="lbars"></div>
+    <div class="lticks" id="lticks"></div>
+  </div>
+
+  <div class="block refblock" id="wheelBlock">
+    <h2>The decanates</h2>
+    <div id="wheel"></div>
+    <div class="wlegend" id="wlegend"></div>
+  </div>
+
+  <div class="block refblock" id="refBlock">
+    <h2>Rulerships</h2>
+    <div class="tablescroll"><table class="dig" id="ruletable"></table></div>
+    <div class="foot">Planet colour marks sect — <span class="p-day">diurnal</span>, <span class="p-night">nocturnal</span>, <span class="p-common">common</span>. Sign colour marks element — <span class="e-fire">fire</span>, <span class="e-earth">earth</span>, <span class="e-air">air</span>, <span class="e-water">water</span>.</div>
+    <div class="foot">Day and night houses follow the masculine/feminine division of the signs, as in Lilly: Saturn's day house is <b>Aquarius</b>, his night house <b>Capricorn</b>. The Nodes are omitted; classically the Head is exalted in Gemini and the Tail in Sagittarius.</div>
+  </div>
+</section>
+
+<!-- ============ DRILL ============ -->
+<section class="screen" id="s-drill">
+  <div class="hud">
+    <button class="backlink" id="stopBtn">← Stop</button>
+    <span class="eyebrow" id="counter">1 / 24</span>
+    <span class="clock" id="clock">0.0</span>
+  </div>
+  <div class="progress"><i id="pbar"></i></div>
+
+  <div class="stage">
+    <div class="qcat" id="qcat"></div>
+    <div class="qmain" id="qmain"></div>
+    <div class="qsub" id="qsub"></div>
+    <div class="qribbon" id="qribbon"></div>
+  </div>
+
+  <div class="answers" id="answers"></div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section class="screen" id="s-done">
+  <button class="backlink" id="homeBtn">← Settings</button>
+  <div class="eyebrow">Run complete</div>
+  <div class="bigtime" id="finalTime">—</div>
+  <div class="statgrid" id="statgrid"></div>
+  <div class="bars" id="catbars"></div>
+  <div class="btnrow">
+    <button class="prime" id="againBtn">Run again</button>
+    <button id="weakBtn">Drill what you missed</button>
+  </div>
+  <div class="missed" id="missedBox"></div>
+</section>
+
+</div>
+<script>
+"use strict";
+const VS='\uFE0E';
+const PL={
+  sa:{n:'Saturn',g:'♄'+VS,sect:'day'},
+  ju:{n:'Jupiter',g:'♃'+VS,sect:'day'},
+  ma:{n:'Mars',g:'♂'+VS,sect:'night'},
+  su:{n:'Sun',g:'☉'+VS,sect:'day'},
+  ve:{n:'Venus',g:'♀'+VS,sect:'night'},
+  me:{n:'Mercury',g:'☿'+VS,sect:'common'},
+  mo:{n:'Moon',g:'☽'+VS,sect:'night'}
+};
+const PKEYS=['sa','ju','ma','su','ve','me','mo'];   // Chaldean order
+
+const SIGNS=[
+ {k:'ari',n:'Aries',g:'♈'+VS,el:'fire',dom:'ma',ds:'day',det:'ve',ex:{p:'su',d:19},fa:{p:'sa',d:21},
+  b:[['ju',6],['ve',12],['me',20],['ma',25],['sa',30]],f:['ma','su','ve']},
+ {k:'tau',n:'Taurus',g:'♉'+VS,el:'earth',dom:'ve',ds:'night',det:'ma',ex:{p:'mo',d:3},fa:null,
+  b:[['ve',8],['me',14],['ju',22],['sa',27],['ma',30]],f:['me','mo','sa']},
+ {k:'gem',n:'Gemini',g:'♊'+VS,el:'air',dom:'me',ds:'day',det:'ju',ex:null,fa:null,
+  b:[['me',6],['ju',12],['ve',17],['ma',24],['sa',30]],f:['ju','ma','su']},
+ {k:'can',n:'Cancer',g:'♋'+VS,el:'water',dom:'mo',ds:'night',det:'sa',ex:{p:'ju',d:15},fa:{p:'ma',d:28},
+  b:[['ma',7],['ve',13],['me',19],['ju',26],['sa',30]],f:['ve','me','mo']},
+ {k:'leo',n:'Leo',g:'♌'+VS,el:'fire',dom:'su',ds:'day',det:'sa',ex:null,fa:null,
+  b:[['ju',6],['ve',11],['sa',18],['me',24],['ma',30]],f:['sa','ju','ma']},
+ {k:'vir',n:'Virgo',g:'♍'+VS,el:'earth',dom:'me',ds:'night',det:'ju',ex:{p:'me',d:15},fa:{p:'ve',d:27},
+  b:[['me',7],['ve',17],['ju',21],['ma',28],['sa',30]],f:['su','ve','me']},
+ {k:'lib',n:'Libra',g:'♎'+VS,el:'air',dom:'ve',ds:'day',det:'ma',ex:{p:'sa',d:21},fa:{p:'su',d:19},
+  b:[['sa',6],['me',14],['ju',21],['ve',28],['ma',30]],f:['mo','sa','ju']},
+ {k:'sco',n:'Scorpio',g:'♏'+VS,el:'water',dom:'ma',ds:'night',det:'ve',ex:null,fa:{p:'mo',d:3},
+  b:[['ma',7],['ve',11],['me',19],['ju',24],['sa',30]],f:['ma','su','ve']},
+ {k:'sag',n:'Sagittarius',g:'♐'+VS,el:'fire',dom:'ju',ds:'day',det:'me',ex:null,fa:null,
+  b:[['ju',12],['ve',17],['me',21],['sa',26],['ma',30]],f:['me','mo','sa']},
+ {k:'cap',n:'Capricorn',g:'♑'+VS,el:'earth',dom:'sa',ds:'night',det:'mo',ex:{p:'ma',d:28},fa:{p:'ju',d:15},
+  b:[['me',7],['ju',14],['ve',22],['sa',26],['ma',30]],f:['ju','ma','su']},
+ {k:'aqu',n:'Aquarius',g:'♒'+VS,el:'air',dom:'sa',ds:'day',det:'su',ex:null,fa:null,
+  b:[['me',7],['ve',13],['ju',20],['ma',25],['sa',30]],f:['ve','me','mo']},
+ {k:'pis',n:'Pisces',g:'♓'+VS,el:'water',dom:'ju',ds:'night',det:'me',ex:{p:'ve',d:27},fa:{p:'me',d:15},
+  b:[['ve',12],['ju',16],['me',19],['ma',28],['sa',30]],f:['sa','ju','ma']}
+];
+const ELS=['fire','earth','air','water'];
+const ELN={fire:'Fire',earth:'Earth',air:'Air',water:'Water'};
+const TRIP={
+  fire:{dor:{d:'su',n:'ju',p:'sa'},ptol:{d:'su',n:'ju',p:null}},
+  earth:{dor:{d:'ve',n:'mo',p:'ma'},ptol:{d:'ve',n:'mo',p:null}},
+  air:{dor:{d:'sa',n:'me',p:'ju'},ptol:{d:'sa',n:'me',p:null}},
+  water:{dor:{d:'ve',n:'ma',p:'mo'},ptol:{d:'ma',n:'ma',p:null}}
+};
+const JOY={me:1,mo:3,ve:5,ma:6,su:9,ju:11,sa:12};
+const TRUMPS=['The Fool','The Magician','The High Priestess','The Empress','The Emperor',
+'The Hierophant','The Lovers','The Chariot','Strength','The Hermit','Wheel of Fortune',
+'Justice','The Hanged Man','Death','Temperance','The Devil','The Tower','The Star',
+'The Moon','The Sun','Judgement','The World'];
+const SEQ22=TRUMPS.map((_,i)=>i);
+
+/* --- the 36 decanates -------------------------------------------------
+   Ruler: Chaldean order from Mars at 0° Aries (identical to the faces).
+   Card:  suit from the sign's element, number from its mode —
+          cardinal 2·3·4, fixed 5·6·7, mutable 8·9·10, stepped by decan.  */
+const SUITS=[{k:'w',n:'Wands',el:'fire'},{k:'c',n:'Cups',el:'water'},
+             {k:'s',n:'Swords',el:'air'},{k:'p',n:'Pentacles',el:'earth'}];
+const SUITBYEL={fire:0,water:1,air:2,earth:3};
+const NUMWORD=['Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten'];
+const cardIndex=(si,dec)=>SUITBYEL[SIGNS[si].el]*9+((si%3)*3+dec);
+const cardSuit=c=>Math.floor(c/9), cardNum=c=>2+c%9;
+const cardName=c=>NUMWORD[c%9]+' of '+SUITS[cardSuit(c)].n;
+const cardSign=c=>{const m=Math.floor((c%9)/3),e=SUITS[cardSuit(c)].el;
+  for(let i=0;i<12;i++) if(SIGNS[i].el===e&&i%3===m) return i; return 0;};
+const cardDecan=c=>(c%9)%3;
+const SEQ36=[];for(let i=0;i<36;i++)SEQ36.push(i);
+const suitIcon=(c,cls)=>'<svg class="'+(cls||'')+'" aria-hidden="true"><use href="#si-'+
+  SUITS[cardSuit(c)].k+'"/></svg>';
+const suitCls=c=>'e-'+SUITS[cardSuit(c)].el;
+const DECLABEL=['first','second','third'];
+const NUMKIND={house:1,key:1,trump:1,card:1};
+const HOUSES=['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'];
+/* ============================================================
+   ADDING A DRILL
+   1. push an entry to APPS
+   2. add its categories to CATS with app:'<id>'
+   3. add a branch to buildPool() that emits its questions
+   4. if it needs its own option control or reference panel, give the
+      block an id and toggle it inside syncBlocks()
+   ============================================================ */
+const APPS=[
+  {id:'dig',title:'Essential <em>dignities</em>',plain:'Essential dignities',
+   sub:'Traditional astrology',
+   lede:'Domicile, detriment, exaltation, fall, triplicity, bound and face.'},
+  {id:'tar',title:'Major <em>Arcana</em>',plain:'Major Arcana',
+   sub:'Golden Dawn numbering',
+   lede:'The twenty-two trumps, name to key and key to name.'},
+  {id:'dec',title:'Minor Arcana <em>decanates</em>',plain:'Minor Arcana decanates',
+   sub:'Golden Dawn attributions',
+   lede:'Thirty-six decans, each with its small card and its planetary ruler.'}
+];
+const CATS=[
+  {k:'dom', label:'Domiciles',          app:'dig'},
+  {k:'det', label:'Detriments',         app:'dig'},
+  {k:'exf', label:'Exaltations & falls',app:'dig'},
+  {k:'trip',label:'Triplicities',       app:'dig'},
+  {k:'bnd', label:'Bounds',             app:'dig'},
+  {k:'fac', label:'Faces',              app:'dig'},
+  {k:'sct', label:'Sect & joys',        app:'dig'},
+  {k:'tn2k',label:'Trump → key',        app:'tar'},
+  {k:'tk2n',label:'Key → trump',        app:'tar'},
+  {k:'dcps',label:'Card → ruler & sign',app:'dec'},
+  {k:'dsc', label:'Decan → card',       app:'dec'}
+];
+const CATNAME={};CATS.forEach(c=>CATNAME[c.k]=c.label);
+const catsOf=id=>CATS.filter(c=>c.app===id).map(c=>c.k);
+const LENS=[12,24,48,'All'];
+
+const sc=p=>'p-'+PL[p].sect;
+const ec=s=>'e-'+s.el;
+const pg=p=>'<span class="'+sc(p)+'">'+PL[p].g+'</span>';
+const sg=s=>s.g;
+const $=id=>document.getElementById(id);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const boundOf=(s,d)=>{for(let i=0;i<5;i++){if(d<s.b[i][1])return i}return 4};
+
+/* ---------------- storage ---------------- */
+const KB='ed.best.v2', KL='ed.ledger.v2', KC='ed.cfg.v5';
+function load(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+let BEST=load(KB,{}), LEDGER=load(KL,{});
+const BASE={len:'All',weak:0,trip:'dor',topt:22,nums:'all'};
+const DEFAULTS={dig:{cats:['dom','det','exf']},tar:{cats:['tn2k','tk2n']},dec:{cats:['dcps']}};
+let CFGS=load(KC,{})||{};
+APPS.forEach(a=>{
+  CFGS[a.id]=Object.assign({},BASE,DEFAULTS[a.id],CFGS[a.id]||{});
+  const own=catsOf(a.id);
+  CFGS[a.id].cats=(CFGS[a.id].cats||[]).filter(c=>own.includes(c));
+  if(!CFGS[a.id].cats.length) CFGS[a.id].cats=DEFAULTS[a.id].cats.slice();
+});
+let APP=APPS[0], CFG=CFGS[APP.id];
+
+/* ---------------- reference render ---------------- */
+function ribbonHTML(s,opts){
+  opts=opts||{};
+  const blank=!!opts.blank;
+  let html='';
+  if(opts.showBounds!==false){
+    if(blank){
+      html+='<div class="bounds blankbar"></div>';
+    }else{
+      let prev=0;html+='<div class="bounds">';
+      s.b.forEach(([p,end])=>{
+        const w=((end-prev)/30*100).toFixed(3);
+        html+='<div class="bseg" style="flex:0 0 '+w+'%">'+pg(p)+'</div>';
+        prev=end;
+      });
+      html+='</div>';
+    }
+  }
+  if(!opts.noFaces){
+    html+='<div class="faces">';
+    s.f.forEach((p,i)=>{
+      const hl=opts.hlFace===i?' hl':'';
+      html+='<div class="fseg'+hl+'">'+(blank?'':'<span class="'+sc(p)+'">'+PL[p].g+'</span>')+'</div>';
+    });
+    html+='</div>';
+  }
+  let tick='';
+  if(typeof opts.tick==='number') tick='<div class="tick" style="left:'+(opts.tick/30*100).toFixed(3)+'%"></div>';
+  return '<div class="ribbon">'+html+tick+'</div>'+
+    (opts.scale?'<div class="scaleline mini"><span>0°</span><span>10°</span><span>20°</span><span>30°</span></div>':'');
+}
+function renderTable(){
+  const t=TRIP;
+  let h='<thead><tr><th>Sign</th><th>Domicile</th><th>Detriment</th><th>Exaltation</th><th>Fall</th><th>Tripl. day</th><th>night</th><th>partic.</th></tr></thead><tbody>';
+  SIGNS.forEach(s=>{
+    const tr=t[s.el][CFG.trip];
+    h+='<tr>'
+      +'<td class="sg"><span class="'+ec(s)+'">'+s.g+'</span><small>'+s.n+'</small></td>'
+      +'<td class="gl">'+pg(s.dom)+' <span class="deg">'+s.ds+'</span></td>'
+      +'<td class="gl">'+pg(s.det)+'</td>'
+      +'<td class="gl">'+(s.ex?pg(s.ex.p):'<span class="na">—</span>')+'</td>'
+      +'<td class="gl">'+(s.fa?pg(s.fa.p):'<span class="na">—</span>')+'</td>'
+      +'<td class="gl">'+pg(tr.d)+'</td>'
+      +'<td class="gl">'+pg(tr.n)+'</td>'
+      +'<td class="gl">'+(tr.p?pg(tr.p):'<span class="na">—</span>')+'</td>'
+      +'</tr>';
+  });
+  $('ruletable').innerHTML=h+'</tbody>';
+}
+
+/* ---------------- question pool ---------------- */
+function mk(o){return o}
+function buildPool(cats,scheme,nums){
+  const Q=[];
+  const has=c=>cats.indexOf(c)>=0;
+  const inGroup=j=>(nums===undefined||nums==='all'||Number(nums)===j);
+
+  if(has('dom')){
+    SIGNS.forEach(s=>Q.push(mk({cat:'dom',key:'dom.s.'+s.k,kind:'planet',ans:s.dom,
+      qcat:'Domicile',main:s.g,sub:'Lord of '+s.n+'?',
+      note:PL[s.dom].n+' rules '+s.n+' — his '+s.ds+' house.'})));
+    const houses=[['ma','day','ari'],['ma','night','sco'],['ve','day','lib'],['ve','night','tau'],
+                  ['me','day','gem'],['me','night','vir'],['ju','day','sag'],['ju','night','pis'],
+                  ['sa','day','aqu'],['sa','night','cap'],['su','sole','leo'],['mo','sole','can']];
+    houses.forEach(([p,which,sk])=>{
+      const s=SIGNS.find(x=>x.k===sk);
+      Q.push(mk({cat:'dom',key:'dom.p.'+p+'.'+which,kind:'sign',ans:sk,
+        qcat:'Domicile',main:PL[p].g,
+        sub:which==='sole'?PL[p].n+' — his one house?':PL[p].n+' — his '+which+' house?',
+        note:which==='sole'?PL[p].n+' has Cancer and Leo alone; '+s.n+' is his.'
+             :PL[p].n+': '+which+' house '+s.n+'.'}));
+    });
+  }
+
+  if(has('det')){
+    SIGNS.forEach(s=>Q.push(mk({cat:'det',key:'det.'+s.k,kind:'planet',ans:s.det,
+      qcat:'Detriment',main:s.g,sub:'Which planet is in detriment in '+s.n+'?',
+      note:PL[s.det].n+' rules '+opp(s).n+', opposite '+s.n+' — so he is in detriment here.'})));
+  }
+
+  if(has('exf')){
+    SIGNS.filter(s=>s.ex).forEach(s=>{
+      const o=opp(s);
+      Q.push(mk({cat:'exf',key:'ex.s.'+s.k,kind:'planet',ans:s.ex.p,
+        qcat:'Exaltation',main:s.g,sub:'Which planet is exalted in '+s.n+'?',
+        note:PL[s.ex.p].n+' is exalted in '+s.n+' and falls in '+o.n+'.'}));
+      Q.push(mk({cat:'exf',key:'ex.p.'+s.ex.p,kind:'sign',ans:s.k,
+        qcat:'Exaltation',main:PL[s.ex.p].g,sub:PL[s.ex.p].n+' — exalted in which sign?',
+        note:PL[s.ex.p].n+' is exalted in '+s.n+' and falls in '+o.n+'.'}));
+    });
+    SIGNS.filter(s=>s.fa).forEach(s=>{
+      const o=opp(s);
+      Q.push(mk({cat:'exf',key:'fa.s.'+s.k,kind:'planet',ans:s.fa.p,
+        qcat:'Fall',main:s.g,sub:'Which planet falls in '+s.n+'?',
+        note:PL[s.fa.p].n+' falls in '+s.n+' — opposite his exaltation in '+o.n+'.'}));
+      Q.push(mk({cat:'exf',key:'fa.p.'+s.fa.p,kind:'sign',ans:s.k,
+        qcat:'Fall',main:PL[s.fa.p].g,sub:PL[s.fa.p].n+' — falls in which sign?',
+        note:PL[s.fa.p].n+' falls in '+s.n+' — opposite his exaltation in '+o.n+'.'}));
+    });
+  }
+
+  if(has('trip')){
+    ELS.forEach(el=>{
+      const tr=TRIP[el][scheme];
+      const times=[['d','day'],['n','night']];
+      if(tr.p) times.push(['p','participating']);
+      times.forEach(([kk,word])=>{
+        Q.push(mk({cat:'trip',key:'trip.'+scheme+'.'+el+'.'+kk,kind:'planet',ans:tr[kk],
+          qcat:'Triplicity',main:ELN[el],
+          sub:'Lord of the '+ELN[el].toLowerCase()+' triplicity by '+word+'?',
+          note:ELN[el]+' — '+SIGNS.filter(s=>s.el===el).map(s=>s.n).join(', ')+'. '+
+               'Day '+PL[tr.d].n+', night '+PL[tr.n].n+(tr.p?', participating '+PL[tr.p].n:'')+'.'}));
+      });
+    });
+  }
+
+  if(has('bnd')){
+    SIGNS.forEach(s=>{
+      let prev=0;
+      s.b.forEach(([p,end],i)=>{
+        const lo=prev,hi=end;prev=end;
+        Q.push(mk({cat:'bnd',key:'bnd.'+s.k+'.'+i,kind:'planet',ans:p,sign:s,band:[lo,hi],
+          qcat:'Bounds · Egyptian',
+          degFn:()=>{const d=lo+Math.random()*(hi-lo);return d>=hi-0.02?hi-0.05:d},
+          sub:'Which planet holds this bound?',
+          note:PL[p].n+' holds '+lo+'°–'+hi+'° of '+s.n+'.'}));
+      });
+    });
+  }
+
+  if(has('fac')){
+    SIGNS.forEach(s=>{
+      s.f.forEach((p,i)=>{
+        Q.push(mk({cat:'fac',key:'fac.'+s.k+'.'+i,kind:'planet',ans:p,sign:s,face:i,
+          qcat:'Face · decan',
+          main:s.g+' <span style="font-size:.5em">'+(i*10)+'°–'+((i+1)*10)+'°</span>',
+          sub:'Lord of the '+['first','second','third'][i]+' face of '+s.n+'?',
+          note:s.n+' faces: '+s.f.map((x,j)=>PL[x].n+' '+(j*10)+'–'+((j+1)*10)).join(', ')+'.'}));
+      });
+    });
+  }
+
+  if(has('sct')){
+    PKEYS.forEach(p=>{
+      Q.push(mk({cat:'sct',key:'sect.'+p,kind:'sect',ans:PL[p].sect,
+        qcat:'Sect',main:PL[p].g,sub:PL[p].n+' — of which sect?',
+        note:PL[p].n+' is '+({day:'diurnal',night:'nocturnal',common:'common — diurnal when oriental, nocturnal when occidental'})[PL[p].sect]+'.'}));
+      Q.push(mk({cat:'sct',key:'joy.'+p,kind:'house',ans:JOY[p],
+        qcat:'Joy',main:PL[p].g,sub:PL[p].n+' — rejoices in which house?',
+        note:PL[p].n+' has his joy in the '+HOUSES[JOY[p]-1]+' house.'}));
+    });
+  }
+  if(has('dsc')){
+    SIGNS.forEach((sg,si)=>{
+      for(let j=0;j<3;j++){
+        if(!inGroup(j))continue;
+        const c=cardIndex(si,j);
+        Q.push(mk({cat:'dsc',key:'dsc.'+sg.k+'.'+j,kind:'card',ans:c,
+          qcat:'Decan → card',
+          main:'<span class="'+ec(sg)+'">'+sg.g+'</span> <span style="font-size:.5em">'+(j*10)+'°–'+((j+1)*10)+'°</span>',
+          sub:'The '+DECLABEL[j]+' decan of '+sg.n+' — which small card?',
+          note:cardName(c)+' — '+sg.n+' '+(j*10)+'–'+((j+1)*10)+'.'}));
+      }
+    });
+  }
+  if(has('dcps')){
+    SEQ36.forEach(c=>{
+      if(!inGroup(cardDecan(c)))return;
+      const si=cardSign(c),p=SIGNS[si].f[cardDecan(c)];
+      Q.push(mk({cat:'dcps',key:'dcps.'+c,kind:'pair',ans:{p:p,s:SIGNS[si].k},
+        qcat:'Card → ruler & sign',
+        main:'<span class="cardline"><span class="'+suitCls(c)+'">'+suitIcon(c)+'</span>'+cardName(c)+'</span>',
+        mainCls:'name',sub:'Which sign, and which planet?',
+        note:PL[p].n+' in '+SIGNS[si].n+', '+DECLABEL[cardDecan(c)]+' decan.'}));
+    });
+  }
+  if(has('tn2k')){
+    TRUMPS.forEach((name,k)=>Q.push(mk({cat:'tn2k',key:'trump.n2k.'+k,kind:'key',ans:k,
+      qcat:'Trump → key',main:name,mainCls:'name',sub:'Which key number?',
+      note:'Key '+k+' · '+name+'.'})));
+  }
+  if(has('tk2n')){
+    TRUMPS.forEach((name,k)=>Q.push(mk({cat:'tk2n',key:'trump.k2n.'+k,kind:'trump',ans:k,
+      qcat:'Key → trump',main:String(k),mainCls:'num',sub:'Which trump?',
+      note:'Key '+k+' · '+name+'.'})));
+  }
+  return Q;
+}
+function opp(s){const i=SIGNS.indexOf(s);return SIGNS[(i+6)%12]}
+
+/* ---------------- run state ---------------- */
+let RUN=null;
+
+function weightOf(q){
+  const l=LEDGER[q.key];
+  if(!l||!l.seen) return 2.2;                     // unseen: slight priority
+  const err=l.wrong/l.seen;
+  return 1+4*err;
+}
+function pick(pool,n,weighted){
+  const p=pool.slice();
+  if(!weighted) return shuffle(p).slice(0,n);
+  const out=[];
+  const w=p.map(weightOf);
+  while(out.length<n&&p.length){
+    let tot=0;for(const x of w)tot+=x;
+    let r=Math.random()*tot,i=0;
+    while(r>w[i]&&i<w.length-1){r-=w[i];i++}
+    out.push(p[i]);p.splice(i,1);w.splice(i,1);
+  }
+  return out;
+}
+function startRun(subset){
+  const scheme=CFG.trip;
+  let pool = subset && subset.length ? subset : buildPool(CFG.cats,scheme,CFG.nums);
+  if(!pool.length){return}
+  let n = subset&&subset.length ? pool.length : (CFG.len==='All'?pool.length:Math.min(CFG.len,pool.length));
+  const qs = subset&&subset.length ? shuffle(pool.slice()) : pick(pool,n,!!CFG.weak);
+  RUN={qs,i:0,right:0,missed:[],log:[],per:{},slipped:{},t0:performance.now(),locked:false,
+       seatP:PKEYS.slice(),seatS:SIGNS.map(s=>s.k),seatT:shuffle(SEQ22.slice()),
+       subset:!!(subset&&subset.length)};
+  RUN.rankT=[];RUN.seatT.forEach((k,i)=>{RUN.rankT[k]=i});
+  qs.forEach(q=>{ if(q.degFn) q.deg=q.degFn(); });
+  show('s-drill');
+  tickClock();
+  renderQ();
+}
+function show(id){
+  ['s-menu','s-setup','s-drill','s-done'].forEach(x=>$(x).classList.toggle('live',x===id));
+  document.documentElement.classList.toggle('drilling',id==='s-drill');
+  window.scrollTo(0,0);
+}
+let clockTimer=null;
+function fmt(ms){const s=ms/1000;return s<60?s.toFixed(1):Math.floor(s/60)+':'+(s%60).toFixed(1).padStart(4,'0')}
+function tickClock(){
+  clearInterval(clockTimer);
+  clockTimer=setInterval(()=>{ if(RUN)$('clock').textContent=fmt(performance.now()-RUN.t0) },100);
+}
+
+/* ---------------- drill render ---------------- */
+function renderQ(){
+  const q=RUN.qs[RUN.i];
+  $('counter').textContent=(RUN.i+1)+' / '+RUN.qs.length;
+  $('pbar').style.width=(RUN.i/RUN.qs.length*100)+'%';
+  $('qcat').textContent=q.qcat;
+
+  let main=q.main||'';
+  if(q.cat==='bnd'){
+    const d=q.deg, dd=Math.floor(d), mm=Math.floor((d-dd)*60);
+    main=String(dd)+'°'+String(mm).padStart(2,'0')+'′ <span class="sgl">'+q.sign.g+'</span>';
+  }
+  $('qmain').className='qmain'+(q.mainCls?' '+q.mainCls:'');
+  $('qmain').innerHTML=main;
+  $('qsub').textContent=q.sub;
+
+  if(q.cat==='bnd'){
+    $('qribbon').innerHTML=ribbonHTML(q.sign,{blank:true,tick:q.deg,noFaces:true,scale:true});
+  }else if(q.cat==='fac'){
+    $('qribbon').innerHTML=ribbonHTML(q.sign,{blank:true,hlFace:q.face,scale:true});
+  }else $('qribbon').innerHTML='';
+
+  const box=$('answers');box.className='answers';
+  let opts=[];
+  if(q.kind==='planet'){box.classList.add('planets');
+    opts=RUN.seatP.map(p=>({v:p,g:PL[p].g,n:PL[p].n,cls:sc(p)}));}
+  else if(q.kind==='sign'){box.classList.add('signs');
+    opts=RUN.seatS.map(k=>{const s=SIGNS.find(x=>x.k===k);return {v:k,g:s.g,n:s.n,cls:ec(s)}});}
+  else if(q.kind==='house'){box.classList.add('signs');
+    opts=HOUSES.map((h,i)=>({v:i+1,num:h}));}
+  else if(q.kind==='sect'){box.classList.add('small');
+    opts=[{v:'day',n:'Diurnal',g:'☉'+VS,cls:'p-day'},{v:'night',n:'Nocturnal',g:'☽'+VS,cls:'p-night'},
+          {v:'common',n:'Common',g:'☿'+VS,cls:'p-common'}];}
+  else if(q.kind==='key'){box.classList.add('keys');
+    opts=SEQ22.map(n=>({v:n,num:n}));}
+  else if(q.kind==='pair'){
+    box.classList.add('pair');
+    const pl=PKEYS.map(k=>'<button class="opt" data-dim="p" data-v="'+k+'">'+
+      '<span class="og '+sc(k)+'">'+PL[k].g+'</span><span class="on">'+PL[k].n+'</span></button>').join('');
+    const sn=SIGNS.map(x=>'<button class="opt" data-dim="s" data-v="'+x.k+'">'+
+      '<span class="og '+ec(x)+'">'+x.g+'</span><span class="on">'+x.n+'</span></button>').join('');
+    box.innerHTML='<div class="pairsec"><div class="pairlab">Sign</div>'+
+      '<div class="pgrid signs">'+sn+'</div></div>'+
+      '<div class="pairsec"><div class="pairlab">Ruler of the decan</div><div class="pgrid planets">'+pl+'</div></div>';
+    box.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b,q)));
+    RUN.locked=false;RUN.tq=performance.now();RUN.pair={p:false,s:false};
+    kbuf='';clearTimeout(kbufT);
+    return;
+  }
+  else if(q.kind==='card'){box.classList.add('cards');
+    opts=SEQ36.map(c=>({v:c,html:'<span class="'+suitCls(c)+'">'+suitIcon(c)+'</span>'+cardNum(c),k:'card'}));}
+  else if(q.kind==='trump'){box.classList.add('trumps');
+    let pool;
+    if(CFG.topt>=22){pool=RUN.seatT.slice()}
+    else{
+      const wrong=shuffle(SEQ22.filter(n=>n!==q.ans)).slice(0,CFG.topt-1);
+      pool=[q.ans].concat(wrong).sort((a,b)=>RUN.rankT[a]-RUN.rankT[b]);
+    }
+    opts=pool.map(n=>({v:n,text:TRUMPS[n]}));}
+
+  box.innerHTML=opts.map(o=>{
+    let inner,cls='';
+    if(o.html!==undefined){inner=o.html;cls=' '+o.k}
+    else if(o.text!==undefined){inner='<span class="ot">'+o.text+'</span>'}
+    else if(o.num!==undefined){inner='<span class="og">'+o.num+'</span>';cls=' num'}
+    else{inner='<span class="og '+(o.cls||'')+'">'+o.g+'</span><span class="on">'+o.n+'</span>'}
+    return '<button class="opt'+cls+'" data-v="'+o.v+'">'+inner+'</button>';
+  }).join('');
+  box.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b,q)));
+  RUN.locked=false;RUN.tq=performance.now();RUN.pair={p:false,s:false};
+  kbuf='';clearTimeout(kbufT);
+}
+
+function slip(q){if(!RUN.slipped[RUN.i]){RUN.slipped[RUN.i]=true;RUN.missed.push(q)}}
+function shut(btn){btn.classList.add('wrong');btn.disabled=true}
+function answer(btn,q){
+  if(RUN.locked)return;
+
+  if(q.kind==='pair'){                   // both halves must be found
+    const dim=btn.dataset.dim;
+    if(btn.dataset.v!==q.ans[dim]){slip(q);shut(btn);return}
+    btn.classList.add('got');
+    $('answers').querySelectorAll('.opt[data-dim="'+dim+'"]').forEach(b=>{b.disabled=true});
+    RUN.pair[dim]=true;
+    if(RUN.pair.p&&RUN.pair.s)commitCorrect(q);
+    return;
+  }
+
+  const val=NUMKIND[q.kind]?Number(btn.dataset.v):btn.dataset.v;
+  if(val!==q.ans){slip(q);shut(btn);return}   // wrong: close that door, say nothing else
+  commitCorrect(q);
+}
+function commitCorrect(q){
+  RUN.locked=true;
+  const dt=performance.now()-RUN.tq, clean=!RUN.slipped[RUN.i];
+  const L=LEDGER[q.key]||(LEDGER[q.key]={seen:0,wrong:0});
+  L.seen++;if(!clean)L.wrong++;L.sum=(L.sum||0)+dt;
+  L.streak=clean?(L.streak||0)+1:0;                 // clean answers in a row
+  L.ema=L.ema?L.ema*0.6+dt*0.4:dt;                  // recent pace, not lifetime mean
+  const P=RUN.per[q.cat]||(RUN.per[q.cat]={n:0,r:0});P.n++;if(clean)P.r++;
+  RUN.log.push({q,ok:clean,dt});
+  if(clean)RUN.right++;
+  next();
+}
+function next(){
+  if(!RUN||!$('s-drill').classList.contains('live'))return;
+  RUN.i++;
+  if(RUN.i>=RUN.qs.length){finish()}else{renderQ()}
+}
+
+/* ---------------- results ---------------- */
+function cfgKey(){
+  return APP.id+'|'+(RUN.subset?'weak':CFG.cats.slice().sort().join('+'))+'|'+RUN.qs.length+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums;
+}
+function finish(){
+  clearInterval(clockTimer);
+  const ms=performance.now()-RUN.t0;
+  save(KL,LEDGER);
+  const acc=RUN.right/RUN.qs.length;
+  const k=cfgKey();
+  let isBest=false;
+  if(acc===1){
+    if(!BEST[k]||ms<BEST[k]){BEST[k]=ms;isBest=true;save(KB,BEST)}
+  }
+  $('finalTime').textContent=fmt(ms);
+  $('statgrid').innerHTML=
+    stat('Correct',RUN.right+' / '+RUN.qs.length)+
+    stat('Accuracy',Math.round(acc*100)+'%')+
+    stat('Per question',(ms/RUN.qs.length/1000).toFixed(1)+'s')+
+    stat('Best clean run',BEST[k]?fmt(BEST[k])+(isBest?' · new':''):'—');
+
+  const rows=Object.keys(RUN.per).map(c=>{
+    const p=RUN.per[c],pc=Math.round(p.r/p.n*100);
+    return '<div class="bar"><span>'+CATNAME[c]+'</span><span class="track"><i style="width:'+pc+'%"></i></span><span class="pc">'+pc+'%</span></div>';
+  }).join('');
+  $('catbars').innerHTML=rows?'<div class="blabel">By category</div>'+rows:'';
+
+  // slowest correct answers: above 1.3x the median, capped at the slowest quarter
+  const right=RUN.log.filter(x=>x.ok).sort((a,b)=>b.dt-a.dt);
+  const sorted=right.map(x=>x.dt).sort((a,b)=>a-b);
+  const med=sorted.length?sorted[Math.floor(sorted.length/2)]:0;
+  const cap=Math.max(1,Math.ceil(right.length*0.25));
+  RUN.slow=right.filter(x=>x.dt>med*1.3).slice(0,cap);
+
+  let box='';
+  if(RUN.missed.length){
+    box+='<div class="blabel">Missed</div><ul>'+RUN.missed.map(q=>
+      '<li><span>'+q.sub+'</span><span class="a">'+ansLabel(q)+'</span></li>').join('')+'</ul>';
+  }else{
+    box+='<div class="foot">Clean run — nothing missed.</div>';
+  }
+  if(RUN.slow.length){
+    box+='<div class="blabel" style="margin-top:16px">Slowest — right, but you hesitated</div><ul>'+
+      RUN.slow.map(x=>'<li><span>'+x.q.sub+'</span><span class="a">'+ansLabel(x.q)+
+      ' <span class="t">'+(x.dt/1000).toFixed(1)+'s</span></span></li>').join('')+'</ul>';
+  }
+  $('missedBox').innerHTML=box;
+  const redrill=RUN.missed.concat(RUN.slow.map(x=>x.q)).filter((q,i,a)=>a.indexOf(q)===i);
+  RUN.redrill=redrill;
+  if(redrill.length){$('weakBtn').style.display='';
+    $('weakBtn').textContent='Drill these '+redrill.length;}
+  else $('weakBtn').style.display='none';
+  show('s-done');
+  renderBestLine();renderTrumpLedger();
+}
+function ansLabel(q){
+  if(q.kind==='planet')return pg(q.ans)+' '+PL[q.ans].n;
+  if(q.kind==='sign'){const s=SIGNS.find(x=>x.k===q.ans);return '<span class="'+ec(s)+'">'+s.g+'</span> '+s.n}
+  if(q.kind==='house')return HOUSES[q.ans-1];
+  if(q.kind==='key')return 'Key '+q.ans;
+  if(q.kind==='trump')return TRUMPS[q.ans];
+  if(q.kind==='card')return cardName(q.ans);
+  if(q.kind==='pair'){const x=SIGNS.find(v=>v.k===q.ans.s);
+    return pg(q.ans.p)+' '+PL[q.ans.p].n+' in <span class="'+ec(x)+'">'+x.g+'</span> '+x.n}
+  return {day:'Diurnal',night:'Nocturnal',common:'Common'}[q.ans];
+}
+function stat(k,v){return '<div class="stat"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'}
+
+/* ---------------- setup UI ---------------- */
+function poolCount(c){return buildPool([c],CFG.trip,CFG.nums).length}
+function renderChips(){
+  const own=CATS.filter(c=>c.app===APP.id);
+  const allOn=own.every(c=>CFG.cats.includes(c.k));
+  $('cats').innerHTML='<div class="cgroup"><div class="cghead"><span>Drill these</span>'+
+    (own.length>2?'<button class="textbtn" data-group="1">'+(allOn?'none':'all')+'</button>':'')+
+    '</div><div class="chips">'+
+    own.map(c=>'<button class="chip" data-k="'+c.k+'" aria-pressed="'+
+      (CFG.cats.includes(c.k)?'true':'false')+'">'+c.label+
+      '<span class="ct">'+poolCount(c.k)+'</span></button>').join('')+'</div></div>';
+  $('cats').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k,on=b.getAttribute('aria-pressed')==='true';
+    if(on&&CFG.cats.length===1)return;
+    if(on)CFG.cats=CFG.cats.filter(x=>x!==k);else CFG.cats.push(k);
+    b.setAttribute('aria-pressed',on?'false':'true');
+    afterCatChange();
+  }));
+  const g=$('cats').querySelector('[data-group]');
+  if(g) g.addEventListener('click',()=>{
+    const keys=catsOf(APP.id);
+    CFG.cats = keys.every(k=>CFG.cats.includes(k)) ? [keys[0]] : keys.slice();
+    renderChips();afterCatChange();
+  });
+}
+function afterCatChange(){save(KC,CFGS);syncBlocks();renderBestLine();renderTrumpLedger();renderWeakBlock();}
+function renderLens(){
+  $('lenseg').innerHTML=LENS.map(l=>
+    '<button data-v="'+l+'" aria-pressed="'+(String(CFG.len)===String(l)?'true':'false')+'">'+l+'</button>').join('');
+  [...$('lenseg').children].forEach(b=>b.addEventListener('click',()=>{
+    CFG.len=b.dataset.v==='All'?'All':Number(b.dataset.v);
+    [...$('lenseg').children].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    save(KC,CFGS);syncBlocks();renderBestLine();
+  }));
+}
+function segWire(id,key,numeric,after){
+  [...$(id).children].forEach(b=>{
+    b.addEventListener('click',()=>{
+      CFG[key]=numeric?Number(b.dataset.v):b.dataset.v;
+      syncSeg(id,key);save(KC,CFGS);if(after)after();
+    });
+  });
+}
+function syncSeg(id,key){
+  [...$(id).children].forEach(x=>x.setAttribute('aria-pressed',String(CFG[key])===x.dataset.v?'true':'false'));
+}
+function syncBlocks(){
+  const dig=APP.id==='dig', tar=APP.id==='tar';
+  // triplicity scheme only matters when triplicities are being drilled
+  $('tripBlock').style.display=(dig&&CFG.cats.includes('trip'))?'':'none';
+  // the choice count only shapes the key-to-trump grid
+  $('trumpOptBlock').style.display=(tar&&CFG.cats.includes('tk2n'))?'':'none';
+  $('numBlock').style.display=(APP.id==='dec')?'':'none';
+  // weighting does nothing when the whole pool is used, or with no history yet
+  const anyHistory=catsOf(APP.id).some(c=>Object.keys(LEDGER).some(k=>LEDGER[k].seen&&keyCat(k)===c));
+  $('selBlock').style.display=(CFG.len!=='All'&&anyHistory)?'':'none';
+  $('refBlock').style.display=dig?'':'none';
+  $('wheelBlock').style.display=(APP.id==='dec')?'':'none';
+}
+// map a stored ledger key back to its category
+function keyCat(k){
+  if(k.indexOf('trump.n2k.')===0)return 'tn2k';
+  if(k.indexOf('trump.k2n.')===0)return 'tk2n';
+  const p=k.split('.')[0];
+  return {dom:'dom',det:'det',ex:'exf',exd:'exf',fa:'exf',trip:'trip',bnd:'bnd',fac:'fac',
+          sect:'sct',joy:'sct',dsc:'dsc',dcps:'dcps'}[p];
+}
+/* A weak spot is an item you have got wrong and not yet answered cleanly
+   CLEAN_RUNS times in a row since, or one you are still noticeably slower on
+   than the rest of this drill. Both tests are recency-weighted, so an item
+   you have fixed drops off by itself rather than being held down by an old
+   mistake. */
+const CLEAN_RUNS=3, SLOW_FACTOR=1.6;
+function weakList(appId){
+  const cats=catsOf(appId);
+  const keys=Object.keys(LEDGER).filter(k=>LEDGER[k].seen&&cats.includes(keyCat(k)));
+  if(!keys.length)return [];
+  const pace=k=>{const L=LEDGER[k];return L.ema||(L.sum?L.sum/L.seen:0)};
+  const paces=keys.map(pace).filter(v=>v>0).sort((a,b)=>a-b);
+  const med=paces.length?paces[Math.floor(paces.length/2)]:0;
+  const out=[];
+  keys.forEach(k=>{
+    const L=LEDGER[k],streak=L.streak||0,p=pace(k);
+    const missed=L.wrong>0&&streak<CLEAN_RUNS;
+    const slow=L.seen>=2&&med>0&&p>med*SLOW_FACTOR;
+    if(missed||slow)out.push({key:k,cat:keyCat(k),pace:p,seen:L.seen,wrong:L.wrong,
+                              streak:streak,missed:missed});
+  });
+  out.sort((a,b)=>(a.streak-b.streak)||(b.pace-a.pace));
+  return out;
+}
+function weakQuestions(appId){
+  const items=weakList(appId);
+  if(!items.length)return [];
+  const byKey={};buildPool(catsOf(appId),CFG.trip,'all').forEach(q=>{byKey[q.key]=q});
+  return items.map(i=>byKey[i.key]).filter(Boolean);
+}
+function renderWeakBlock(){
+  const items=weakList(APP.id);
+  if(!items.length){$('weakBlock').style.display='none';return}
+  $('weakBlock').style.display='';
+  const byCat={};items.forEach(i=>{byCat[i.cat]=(byCat[i.cat]||0)+1});
+  $('weakBreak').innerHTML=Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a])
+    .map(c=>CATNAME[c]+' <b>'+byCat[c]+'</b>').join(' &nbsp;·&nbsp; ');
+  const byKey={};buildPool(catsOf(APP.id),CFG.trip,'all').forEach(q=>{byKey[q.key]=q});
+  $('weakTop').innerHTML='<ul>'+items.slice(0,6).map(i=>{
+    const q=byKey[i.key];if(!q)return '';
+    const tag=i.missed
+      ? (i.streak? i.streak+' of '+CLEAN_RUNS+' clean' : 'missed')
+      : (i.pace/1000).toFixed(1)+'s';
+    return '<li><span>'+q.sub+'</span><span class="a">'+tag+'</span></li>';
+  }).join('')+'</ul>'+
+    '<div class="foot">'+(items.length>6?'and '+(items.length-6)+' more. ':'')+
+    'An item clears once you answer it cleanly '+CLEAN_RUNS+' times in a row.</div>';
+  $('weakStart').textContent='Drill '+items.length+' weak spot'+(items.length===1?'':'s');
+}
+/* The decanate wheel, drawn from the same tables the drill uses, so the
+   reference cannot drift from the questions. 0° Aries sits at the western
+   point and the zodiac runs counter-clockwise, as on a chart wheel. */
+const ELHEX={fire:'#b03612',earth:'#2f6b34',air:'#7c6300',water:'#14567a'};
+function renderWheel(){
+  const cx=200,cy=200,R=[58,96,130,164,197];
+  const pt=(r,d)=>{const b=(270-d)*Math.PI/180;
+    return [(cx+r*Math.sin(b)).toFixed(2),(cy-r*Math.cos(b)).toFixed(2)]};
+  const wedge=(r1,r2,d1,d2)=>{
+    const n=10,out=[];
+    for(let i=0;i<=n;i++)out.push(pt(r1,d1+(d2-d1)*i/n));
+    for(let i=n;i>=0;i--)out.push(pt(r2,d1+(d2-d1)*i/n));
+    return out.map(p=>p.join(',')).join(' ');
+  };
+  let g='';
+  // sign ring, tinted by element
+  SIGNS.forEach((sg,i)=>{
+    g+='<polygon points="'+wedge(R[0],R[1],i*30,(i+1)*30)+'" fill="'+ELHEX[sg.el]+'" opacity=".11"/>';
+  });
+  // ring boundaries
+  R.forEach(r=>{g+='<circle cx="200" cy="200" r="'+r+'" fill="none" stroke="var(--edge)" stroke-width="1"/>'});
+  // dividers: 12 inside the sign ring, 36 across the outer three
+  for(let i=0;i<12;i++){const a=pt(R[0],i*30),b=pt(R[1],i*30);
+    g+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--edge)" stroke-width="1"/>'}
+  for(let i=0;i<36;i++){const a=pt(R[1],i*10),b=pt(R[4],i*10);
+    g+='<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--edge)" stroke-width="1"/>'}
+  // contents
+  SIGNS.forEach((sg,i)=>{
+    const m=pt((R[0]+R[1])/2,i*30+15);
+    g+='<text x="'+m[0]+'" y="'+m[1]+'" font-size="17" text-anchor="middle" dominant-baseline="central" '+
+       'fill="'+ELHEX[sg.el]+'"><title>'+sg.n+'</title>'+sg.g+'</text>';
+    for(let j=0;j<3;j++){
+      const d=i*30+j*10+5, c=cardIndex(i,j), pk=sg.f[j];
+      const pp=pt((R[1]+R[2])/2,d), sp=pt((R[2]+R[3])/2,d), np=pt((R[3]+R[4])/2,d);
+      const tip='<title>'+sg.n+' '+(j*10)+'–'+((j+1)*10)+' · '+PL[pk].n+' · '+cardName(c)+'</title>';
+      g+='<text x="'+pp[0]+'" y="'+pp[1]+'" font-size="14" text-anchor="middle" dominant-baseline="central" '+
+         'fill="var(--ink)">'+tip+PL[pk].g+'</text>';
+      g+='<use href="#si-'+SUITS[cardSuit(c)].k+'" x="'+(sp[0]-8)+'" y="'+(sp[1]-8)+'" width="16" height="16" '+
+         'color="'+ELHEX[SUITS[cardSuit(c)].el]+'">'+tip+'</use>';
+      g+='<text x="'+np[0]+'" y="'+np[1]+'" font-size="13" text-anchor="middle" dominant-baseline="central" '+
+         'fill="var(--ink)" font-family="var(--mono)">'+tip+cardNum(c)+'</text>';
+    }
+  });
+  $('wheel').innerHTML='<svg class="wheel" viewBox="0 0 400 400" role="img" '+
+    'aria-label="The thirty-six decanates with their rulers and small cards">'+g+'</svg>';
+  $('wlegend').innerHTML=SUITS.map(su=>'<span><svg style="color:'+ELHEX[su.el]+'"><use href="#si-'+su.k+
+    '"/></svg>'+su.n+'</span>').join('');
+}
+function renderTrumpLedger(){
+  const on=APP.id==='tar';
+  $('trumpLedger').style.display=on?'':'none';
+  if(!on)return;
+  const means=SEQ22.map(i=>{
+    let n=0,sum=0;
+    ['trump.n2k.','trump.k2n.'].forEach(pre=>{const L=LEDGER[pre+i];if(L&&L.seen){n+=L.seen;sum+=(L.sum||0)}});
+    return n&&sum?sum/n/1000:null;
+  });
+  const seen=means.filter(m=>m!==null);
+  const top=seen.length?Math.max.apply(null,seen):1;
+  const avg=seen.length?seen.reduce((a,b)=>a+b,0)/seen.length:0;
+  $('lbars').innerHTML=means.map((m,i)=>{
+    if(m===null)return '<div class="lbar" style="height:3px" title="'+i+' · '+TRUMPS[i]+' — not yet seen"></div>';
+    const band=m<=avg*0.8?'fast':(m<=avg*1.25?'mid':'slow');
+    return '<div class="lbar" data-band="'+band+'" style="height:'+Math.max(6,Math.round(m/top*74))+
+      'px" title="'+i+' · '+TRUMPS[i]+' — '+m.toFixed(2)+'s"></div>';
+  }).join('');
+  $('lticks').innerHTML=SEQ22.map(i=>'<span>'+i+'</span>').join('');
+  $('ledgerMeta').textContent=seen.length
+    ? seen.length+' of 22 seen · mean '+avg.toFixed(2)+'s'
+    : 'no trump runs recorded yet';
+}
+function renderBestLine(){
+  const tot=buildPool(CFG.cats,CFG.trip,CFG.nums).length;
+  const n=CFG.len==='All'?tot:CFG.len;
+  const k=APP.id+'|'+CFG.cats.slice().sort().join('+')+'|'+Math.min(n,tot)+'|'+CFG.trip+'|'+CFG.topt+'|'+CFG.nums;
+  $('bestline').textContent=BEST[k]?'Best clean run for this set · '+fmt(BEST[k]):'No clean run recorded for this set';
+}
+
+segWire('tripseg','trip',false,()=>{renderTable();renderChips();syncBlocks();renderBestLine()});
+segWire('weakseg','weak',true);
+segWire('toptseg','topt',true,()=>renderBestLine());
+segWire('numseg','nums',false,()=>{renderChips();renderBestLine();});
+
+function renderMenu(){
+  $('applist').innerHTML=APPS.map(a=>{
+    const all=catsOf(a.id), total=buildPool(all,CFGS[a.id].trip,'all').length;
+    const seen=all.reduce((n,c)=>n+Object.keys(LEDGER).filter(k=>keyCat(k)===c&&LEDGER[k].seen).length,0);
+    const bests=Object.keys(BEST).filter(k=>k.indexOf(a.id+'|')===0);
+    const best=bests.length?Math.min.apply(null,bests.map(k=>BEST[k])):null;
+    return '<button class="appcard" data-app="'+a.id+'"><span class="go">→</span>'+
+      '<div class="sub">'+a.sub+'</div><h3>'+a.plain+'</h3>'+
+      '<div class="meta">'+total+' questions · '+seen+' met so far'+
+      (best?' · fastest clean run '+fmt(best):'')+'</div></button>';
+  }).join('');
+  $('applist').querySelectorAll('.appcard').forEach(b=>
+    b.addEventListener('click',()=>openApp(b.dataset.app)));
+}
+function openApp(id){
+  APP=APPS.find(a=>a.id===id); CFG=CFGS[id];
+  $('appTitle').innerHTML=APP.title;
+  $('appSub').textContent=APP.sub;
+  $('appLede').textContent=APP.lede;
+  if(APP.id==='dig') renderTable();
+  if(APP.id==='dec') renderWheel();
+  renderChips();renderLens();
+  syncSeg('tripseg','trip');syncSeg('weakseg','weak');syncSeg('toptseg','topt');syncSeg('numseg','nums');
+  syncBlocks();renderBestLine();renderTrumpLedger();renderWeakBlock();
+  show('s-setup');
+}
+function toMenu(){renderMenu();show('s-menu');}
+renderMenu();
+
+// desktop typing on the key pad: 3-9 fire at once, 1 and 2 wait for a partner
+let kbuf='',kbufT=null;
+document.addEventListener('keydown',e=>{
+  if(!RUN||!$('s-drill').classList.contains('live'))return;
+  const q=RUN.qs[RUN.i];
+  if(!q||q.kind!=='key'||RUN.locked)return;
+  if(!/^[0-9]$/.test(e.key))return;
+  e.preventDefault();
+  const keys=[...$('answers').children];
+  kbuf+=e.key;clearTimeout(kbufT);
+  const fire=v=>{kbuf='';if(v<22&&keys[v]&&!keys[v].disabled)keys[v].click()};
+  const n=parseInt(kbuf,10);
+  if(kbuf.length===2||n>2){fire(n)}
+  else{kbufT=setTimeout(()=>fire(parseInt(kbuf,10)),430)}
+});
+
+$('weakStart').addEventListener('click',()=>{
+  const qs=weakQuestions(APP.id);
+  if(qs.length)startRun(qs);
+});
+$('weakForget').addEventListener('click',()=>{
+  const n=weakList(APP.id).length;
+  if(!confirm('Forget the '+n+' weak spots recorded for this drill? Best times are kept.'))return;
+  weakList(APP.id).forEach(i=>{delete LEDGER[i.key]});
+  save(KL,LEDGER);renderWeakBlock();syncBlocks();renderTrumpLedger();
+});
+
+$('startBtn').addEventListener('click',()=>startRun(null));
+$('againBtn').addEventListener('click',()=>startRun(null));
+$('weakBtn').addEventListener('click',()=>{const m=(RUN.redrill||RUN.missed).slice();startRun(m)});
+$('homeBtn').addEventListener('click',()=>{toSetup()});
+$('backMenu').addEventListener('click',toMenu);
+function toSetup(){show('s-setup');syncBlocks();renderBestLine();renderTrumpLedger();renderWeakBlock();}
+$('stopBtn').addEventListener('click',()=>{clearInterval(clockTimer);RUN=null;toSetup()});
+$('clearBtn').addEventListener('click',()=>{
+  if(confirm('Clear all saved best times and per-item history, for every drill?')){
+    BEST={};LEDGER={};save(KB,BEST);save(KL,LEDGER);renderMenu();
+  }
+});
+</script>
+</body>
+</html>
