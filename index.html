@@ -492,6 +492,12 @@ const TRUMPS=['The Fool','The Magician','The High Priestess','The Empress','The 
 'Justice','The Hanged Man','Death','Temperance','The Devil','The Tower','The Star',
 'The Moon','The Sun','Judgement','The World'];
 const SEQ22=TRUMPS.map((_,i)=>i);
+/* Trumps are always offered in alphabetical order so a name can be found
+   without knowing its number. The leading article is ignored, the way an
+   index would: Chariot, Death, Devil ... Wheel of Fortune, World. */
+const trumpAZ=n=>TRUMPS[n].replace(/^The\s+/,'');
+const TSEQAZ=SEQ22.slice().sort((a,b)=>trumpAZ(a).localeCompare(trumpAZ(b),'en'));
+const TRANKAZ=[];TSEQAZ.forEach((n,i)=>{TRANKAZ[n]=i});
 
 /* --- the 22 paths of the Tree -----------------------------------------
    One index, four tables: EDGES[i] joins two sephiroth, and HEB[i],
@@ -902,6 +908,7 @@ function buildPool(cats,scheme,nums){
      rask:'Which sign or planet rides the blinking path?',
      opt:j=>({v:j,g:tattr(j).g,n:tattr(j).n,cls:tattr(j).cls})},
     {c:'pta',f:'Trump \u2192 path',    r:'Path \u2192 trump',   grid:'trumps',
+     ord:TSEQAZ,
      main:i=>TRUMPS[i],
      ask:i=>'Which path does this trump ride?',
      rask:'Which trump rides the blinking path?',
@@ -914,7 +921,7 @@ function buildPool(cats,scheme,nums){
   ];
   TDIM.forEach(d=>{
     if(!has(d.c))return;
-    const rev=!!CFG.rev, opts=rev?SEQ22.map(j=>d.opt(j)):null;
+    const rev=!!CFG.rev, opts=rev?(d.ord||SEQ22).map(j=>d.opt(j)):null;
     SEQ22.forEach(i=>{
       const note=HEB[i].n+' '+HEB[i].ch+' \u00b7 '+EDGES[i][0]+'\u2013'+EDGES[i][1]+
         ' \u00b7 '+TRUMPS[i]+' \u00b7 '+tattr(i).n+' \u00b7 '+HEB[i].g+' \u00b7 '+HEB[i].m;
@@ -1024,9 +1031,8 @@ function startRun(subset){
   let n = subset&&subset.length ? pool.length : (CFG.len==='All'?pool.length:Math.min(CFG.len,pool.length));
   const qs = subset&&subset.length ? shuffle(pool.slice()) : pick(pool,n,!!CFG.weak);
   RUN={qs,i:0,right:0,missed:[],log:[],per:{},slipped:{},t0:performance.now(),locked:false,
-       seatP:PKEYS.slice(),seatS:SIGNS.map(s=>s.k),seatT:shuffle(SEQ22.slice()),
+       seatP:PKEYS.slice(),seatS:SIGNS.map(s=>s.k),
        subset:!!(subset&&subset.length)};
-  RUN.rankT=[];RUN.seatT.forEach((k,i)=>{RUN.rankT[k]=i});
   qs.forEach(q=>{ if(q.degFn) q.deg=q.degFn(); });
   show('s-drill');
   tickClock();
@@ -1120,10 +1126,10 @@ function renderQ(){
     opts=SEQ36.map(c=>({v:c,html:'<span class="'+suitCls(c)+'">'+suitIcon(c)+'</span>'+cardNum(c),k:'card'}));}
   else if(q.kind==='trump'){box.classList.add('trumps');
     let pool;
-    if(CFG.topt>=22){pool=RUN.seatT.slice()}
+    if(CFG.topt>=22){pool=TSEQAZ.slice()}
     else{
       const wrong=shuffle(SEQ22.filter(n=>n!==q.ans)).slice(0,CFG.topt-1);
-      pool=[q.ans].concat(wrong).sort((a,b)=>RUN.rankT[a]-RUN.rankT[b]);
+      pool=[q.ans].concat(wrong).sort((a,b)=>TRANKAZ[a]-TRANKAZ[b]);
     }
     opts=pool.map(n=>({v:n,text:TRUMPS[n]}));}
 
