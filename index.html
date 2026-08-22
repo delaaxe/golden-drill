@@ -212,6 +212,10 @@ html.drilling .answers{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:t
   filter:drop-shadow(0 0 5px var(--lit)) drop-shadow(0 0 13px var(--lit))}
 .tree .edge.miss line.band-outer{stroke:var(--litdim);stroke-width:38;
   filter:drop-shadow(0 0 5px var(--litdim)) drop-shadow(0 0 13px var(--litdim))}
+/* a frozen copy of the tree, left glowing over the question that replaces it */
+.treeflash{position:fixed;pointer-events:none;z-index:40;animation:treeFade .46s ease-out forwards}
+.treeflash .tree{width:100%;height:100%}
+@keyframes treeFade{0%,55%{opacity:1}100%{opacity:0}}
 .qmain.heb{font-family:var(--heb);font-size:clamp(56px,15vw,92px);line-height:1}
 .qmain.hebw{font-family:var(--heb);font-size:clamp(34px,9vw,60px);line-height:1.1}
 .opt .og.heb{font-family:var(--heb)}
@@ -537,6 +541,15 @@ const TATTR=['air','me','mo','ve','ari','tau','gem','can','leo','vir','ju','lib'
              'water','sco','sag','cap','ma','aqu','pis','su','fire','sa'];
 const ELG={fire:'\ud83d\udf02'+VS,air:'\ud83d\udf01'+VS,
            water:'\ud83d\udf04'+VS,earth:'\ud83d\udf03'+VS};
+/* Path order interleaves the three kinds of attribution. For the buttons,
+   group them the way they are learned: mothers, planets Chaldean, signs zodiacal. */
+const PASORD=(()=>{
+  const MOTHER=['air','water','fire'];
+  const rank=k=>ELN[k]?MOTHER.indexOf(k)
+              :PL[k]?10+PKEYS.indexOf(k)
+              :30+SIGNS.findIndex(s=>s.k===k);
+  return SEQ22.slice().sort((a,b)=>rank(TATTR[a])-rank(TATTR[b]));
+})();
 function tattr(i){
   const k=TATTR[i];
   if(ELN[k])return {g:ELG[k],n:ELN[k],cls:'e-'+k};
@@ -563,6 +576,20 @@ const svgEl=(n,a)=>{const e=document.createElementNS(SVGNS,n);
 const edgeDepth=(A,B)=>Math.abs(B.x-A.x)<1e-6?0:(Math.abs(B.y-A.y)<1e-6?1:2);
 const trimTo=(A,B,pad)=>{const dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy)||1;
   return {A:{x:A.x+dx/L*pad,y:A.y+dy/L*pad},B:{x:B.x-dx/L*pad,y:B.y-dy/L*pad}}};
+
+/* Lift the lit tree out of the flow so the next question can render under it
+   while the green finishes. Pinned to where it stood, deaf to taps. */
+function flashOut(host){
+  const svg=host.querySelector('svg.tree');if(!svg)return;
+  const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
+  const box=document.createElement('div');
+  box.className='treeflash';
+  box.style.left=r.left+'px';box.style.top=r.top+'px';
+  box.style.width=r.width+'px';box.style.height=r.height+'px';
+  box.appendChild(svg.cloneNode(true));
+  document.body.appendChild(box);
+  setTimeout(()=>box.remove(),500);
+}
 
 /* Draw the Tree into host. onPick, if given, makes the paths tappable and
    receives (index, group). Returns the edge groups by path index. */
@@ -909,6 +936,7 @@ function buildPool(cats,scheme,nums){
      rask:'Which letter rides the blinking path?',
      opt:j=>({v:j,g:HEB[j].ch,n:HEB[j].n,cls:'heb'})},
     {c:'pas',f:'Sign \u2192 path',     r:'Path \u2192 sign',    grid:'signs',
+     ord:PASORD,
      main:i=>'<span class="'+tattr(i).cls+'">'+tattr(i).g+'</span>',
      ask:i=>'Which path does '+tattr(i).n+' ride?',
      rask:'Which sign or planet rides the blinking path?',
@@ -1050,7 +1078,7 @@ function show(id){
   window.scrollTo(0,0);
 }
 let clockTimer=null;
-function fmt(ms){const s=ms/1000;return s<60?s.toFixed(1):Math.floor(s/60)+':'+(s%60).toFixed(1).padStart(4,'0')}
+function fmt(ms){const s=Math.round(ms/100)/10;return s<60?s.toFixed(1)+'s':Math.floor(s/60)+'m '+(s%60).toFixed(1).padStart(4,'0')+'s'}
 function tickClock(){
   clearInterval(clockTimer);
   clockTimer=setInterval(()=>{ if(RUN)$('clock').textContent=fmt(performance.now()-RUN.t0) },100);
@@ -1121,7 +1149,7 @@ function renderQ(){
         setTimeout(()=>g.classList.remove('miss'),520);
         return;
       }
-      g.classList.add('got');commitCorrect(q,450);
+      g.classList.add('got');flashOut(box);commitCorrect(q);
     });
     RUN.locked=false;RUN.tq=performance.now();RUN.pair={p:false,s:false};
     kbuf='';clearTimeout(kbufT);
@@ -1465,12 +1493,17 @@ function renderMenu(){
   $('applist').innerHTML=APPS.map(a=>{
     const all=catsOf(a.id), total=buildPool(all,CFGS[a.id].trip,'all').length;
     const seen=all.reduce((n,c)=>n+Object.keys(LEDGER).filter(k=>keyCat(k)===c&&LEDGER[k].seen).length,0);
-    const bests=Object.keys(BEST).filter(k=>k.indexOf(a.id+'|')===0);
-    const best=bests.length?Math.min.apply(null,bests.map(k=>BEST[k])):null;
+    const bests=Object.keys(BEST).filter(k=>k.indexOf(a.id+'|')===0&&k.split('|')[1]!=='weak');
+    let bestN=0,best=null;
+    bests.forEach(k=>{                       // longest set first, fastest time within it
+      const n=+k.split('|')[2]||0;
+      if(n>bestN){bestN=n;best=BEST[k]}
+      else if(n===bestN&&BEST[k]<best){best=BEST[k]}
+    });
     return '<button class="appcard" data-app="'+a.id+'"><span class="go">→</span>'+
       '<div class="sub">'+a.sub+'</div><h3>'+a.plain+'</h3>'+
       '<div class="meta">'+total+' questions · '+seen+' met so far'+
-      (best?' · fastest clean run '+fmt(best):'')+'</div></button>';
+      (best?' · fastest '+bestN+'-question run '+fmt(best):'')+'</div></button>';
   }).join('');
   $('applist').querySelectorAll('.appcard').forEach(b=>
     b.addEventListener('click',()=>openApp(b.dataset.app)));
